@@ -2823,3 +2823,651 @@ body::after {
     font-size: 0.7rem;
     opacity: 0.6;
 }
+
+/* ===== ENHANCED RESPONSIVE DESIGN ===== */
+
+/* Large Desktop (1400px+) */
+@media (min-width: 1400px) {
+    .game-container {
+        max-width: 1400px;
+        grid-template-columns: 1fr 400px;
+    }
+
+    .zombie-target {
+        width: 280px;
+        height: 280px;
+    }
+
+    .zombie-emoji {
+        font-size: 120px;
+    }
+
+    .game-header h1 {
+        font-size: 3rem;
+    }
+
+    .kills-value {
+        font-size: 2.5rem;
+    }
+
+    .side-panel {
+        width: 380px;
+    }
+}
+
+/* Tablet Landscape (768px - 900px) */
+@media (max-width: 900px) and (min-width: 768px) {
+    .game-container {
+        padding: 15px;
+        gap: 15px;
+    }
+
+    .zombie-target {
+        width: 220px;
+        height: 220px;
+    }
+
+    .shop-section {
+        padding: 15px;
+    }
+
+    .upgrade-btn {
+        padding: 12px;
+    }
+}
+
+/* Mobile/Tablet Portrait (max 768px) */
+@media (max-width: 768px) {
+    body {
+        overflow-x: hidden;
+    }
+
+    .game-container {
+        padding: 10px;
+        gap: 10px;
+        grid-template-areas:
+            "header"
+            "main"
+            "shop"
+            "footer";
+        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+
+    .game-header {
+        padding: 15px;
+    }
+
+    .game-header h1 {
+        font-size: 1.5rem;
+        margin-bottom: 10px;
+    }
+
+    .location-display {
+        margin: 5px 0;
+    }
+
+    #location-name {
+        font-size: 0.9rem;
+        padding: 3px 10px;
+    }
+
+    .kills-value {
+        font-size: 1.8rem;
+    }
+
+    .crit-info {
+        font-size: 0.75rem;
+    }
+
+    /* Click section mobile */
+    .click-section {
+        padding: 20px 0;
+        min-height: 250px;
+    }
+
+    .zombie-target {
+        width: 160px;
+        height: 160px;
+    }
+
+    .zombie-emoji {
+        font-size: 60px;
+    }
+
+    .click-text {
+        font-size: 0.8rem;
+        letter-spacing: 1px;
+    }
+
+    .click-text::after {
+        content: ' (TAP!)';
+    }
+
+    /* Stats section mobile */
+    .stats-section {
+        padding: 10px 15px;
+    }
+
+    .stats-section h2 {
+        font-size: 1rem;
+        margin-bottom: 10px;
+    }
+
+    .stat-row {
+        padding: 8px 0;
+        font-size: 0.9rem;
+    }
+
+    /* Shop mobile */
+    .shop-section {
+        padding: 15px;
+        max-height: none;
+    }
+
+    .shop-section h2 {
+        font-size: 1.2rem;
+    }
+
+    .shop-category h3 {
+        font-size: 1rem;
+    }
+
+    .upgrade-btn {
+        padding: 12px 10px;
+    }
+
+    .upgrade-name {
+        font-size: 0.9rem;
+    }
+
+    .upgrade-cost, .upgrade-effect {
+        font-size: 0.75rem;
+    }
+
+    /* Footer mobile */
+    .game-footer {
+        padding: 10px;
+        gap: 8px;
+        justify-content: center;
+    }
+
+    .footer-btn {
+        padding: 10px 12px;
+        font-size: 0.8rem;
+        flex: 1;
+        min-width: 70px;
+        max-width: 100px;
+    }
+
+    /* Side panel mobile - full width */
+    .side-panel {
+        width: 100%;
+        right: -100%;
+    }
+
+    .side-panel.open {
+        right: 0;
+    }
+
+    .side-panel-tabs {
+        padding: 5px 0;
+    }
+
+    .tab-btn {
+        padding: 12px 8px;
+        font-size: 1.3rem;
+    }
+
+    .side-panel-content {
+        padding: 10px;
+    }
+
+    .tab-content h3 {
+        font-size: 1.1rem;
+        margin-bottom: 10px;
+    }
+
+    /* Panel locations mobile */
+    .panel-locations-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+    }
+
+    .panel-location-card {
+        padding: 8px 5px;
+    }
+
+    .panel-location-icon {
+        font-size: 1.5rem;
+    }
+
+    .panel-location-name {
+        font-size: 0.6rem;
+    }
+
+    /* Panel prestige mobile */
+    .panel-prestige-info {
+        padding: 8px;
+    }
+
+    .prestige-stat-row {
+        font-size: 0.8rem;
+    }
+
+    .panel-prestige-btn {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+
+    .panel-bonus-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px;
+    }
+
+    .panel-bonus {
+        font-size: 0.65rem;
+        padding: 4px;
+    }
+
+    .panel-upgrade-row {
+        gap: 5px;
+    }
+
+    .panel-upgrade {
+        padding: 6px 3px;
+    }
+
+    .panel-upgrade-icon {
+        font-size: 1rem;
+    }
+
+    .panel-upgrade-level {
+        font-size: 0.6rem;
+    }
+
+    /* Panel stats mobile */
+    .panel-stat-section {
+        padding: 8px;
+    }
+
+    .panel-stat-section h4 {
+        font-size: 0.85rem;
+    }
+
+    .panel-stat-row {
+        font-size: 0.8rem;
+    }
+
+    /* Panel achievements mobile */
+    .panel-achievements-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 6px;
+    }
+
+    .panel-achievement {
+        padding: 6px;
+    }
+
+    .panel-achievement-icon {
+        font-size: 1.2rem;
+    }
+
+    .panel-achievement-name {
+        font-size: 0.55rem;
+    }
+
+    /* Event display mobile */
+    .event-display {
+        margin-bottom: 10px;
+    }
+
+    .boss-event, .wave-event {
+        padding: 10px 15px;
+    }
+
+    .boss-name, .wave-title {
+        font-size: 1rem;
+    }
+
+    .boss-timer, .wave-timer {
+        font-size: 0.9rem;
+    }
+
+    .boss-health-bar, .wave-progress-bar {
+        height: 20px;
+    }
+
+    .boss-health-text, .wave-progress-text {
+        font-size: 0.7rem;
+    }
+
+    /* Side notifications mobile */
+    .side-notification {
+        right: 10px;
+        left: 10px;
+        max-width: none;
+        padding: 10px 15px;
+        gap: 10px;
+    }
+
+    .side-notification-icon {
+        font-size: 2rem;
+        min-width: 45px;
+    }
+
+    .side-notification-title {
+        font-size: 0.85rem;
+    }
+
+    .side-notification-message {
+        font-size: 0.95rem;
+    }
+
+    .side-notification-bonus {
+        font-size: 0.85rem;
+    }
+
+    /* Combo display mobile */
+    .combo-display {
+        top: -60px;
+    }
+
+    .combo-count {
+        font-size: 2rem;
+    }
+
+    .combo-label {
+        font-size: 0.8rem;
+    }
+
+    .combo-multiplier {
+        font-size: 0.75rem;
+    }
+
+    /* Weather effects - reduce on mobile for performance */
+    .rain-drop {
+        height: 15px;
+    }
+
+    .weather-container .fog-layer {
+        opacity: 0.15;
+    }
+
+    /* Background elements - fewer on mobile */
+    .bg-element {
+        opacity: 0.1 !important;
+    }
+}
+
+/* Small Mobile (max 400px) */
+@media (max-width: 400px) {
+    .game-header h1 {
+        font-size: 1.2rem;
+    }
+
+    .kills-value {
+        font-size: 1.5rem;
+    }
+
+    .zombie-target {
+        width: 140px;
+        height: 140px;
+    }
+
+    .zombie-emoji {
+        font-size: 50px;
+    }
+
+    .footer-btn {
+        padding: 8px 10px;
+        font-size: 0.7rem;
+        min-width: 60px;
+    }
+
+    .panel-locations-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .panel-achievements-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .upgrade-btn {
+        padding: 10px 8px;
+    }
+
+    .upgrade-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 3px;
+    }
+}
+
+/* Landscape orientation on mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+    .game-container {
+        grid-template-areas:
+            "header header"
+            "main shop"
+            "footer footer";
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto 1fr auto;
+    }
+
+    .click-section {
+        min-height: 150px;
+        padding: 10px 0;
+    }
+
+    .zombie-target {
+        width: 120px;
+        height: 120px;
+    }
+
+    .zombie-emoji {
+        font-size: 45px;
+    }
+
+    .stats-section {
+        display: none;
+    }
+
+    .game-header {
+        padding: 10px;
+    }
+
+    .game-header h1 {
+        font-size: 1.2rem;
+        margin-bottom: 5px;
+    }
+
+    .shop-section {
+        max-height: calc(100vh - 150px);
+        overflow-y: auto;
+    }
+}
+
+/* Touch device optimizations */
+@media (hover: none) and (pointer: coarse) {
+    .zombie-target {
+        /* Larger touch target */
+        min-width: 150px;
+        min-height: 150px;
+    }
+
+    .zombie-target:hover {
+        transform: none;
+    }
+
+    .zombie-target:active {
+        transform: scale(0.95);
+    }
+
+    .upgrade-btn:hover {
+        transform: none;
+    }
+
+    .upgrade-btn:active {
+        transform: scale(0.98);
+    }
+
+    .footer-btn:hover {
+        transform: none;
+    }
+
+    .tab-btn:hover {
+        background: transparent;
+    }
+
+    .tab-btn:active {
+        background: rgba(92, 107, 192, 0.3);
+    }
+
+    /* Hide keyboard hint on touch devices */
+    .click-text::after {
+        content: '';
+    }
+}
+
+/* Dark mode preference */
+@media (prefers-color-scheme: dark) {
+    /* Already dark by default, but ensure consistency */
+    body {
+        color-scheme: dark;
+    }
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .weather-container {
+        display: none;
+    }
+
+    .bg-element {
+        animation: none !important;
+    }
+}
+
+/* Print styles (for screenshots/documentation) */
+@media print {
+    .weather-container,
+    .side-panel,
+    .game-footer,
+    .side-notification {
+        display: none !important;
+    }
+
+    body {
+        background: white !important;
+    }
+
+    .game-container {
+        filter: none !important;
+    }
+}
+
+/* ===== VERSION DISPLAY ===== */
+.version-display {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.4);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 100;
+}
+
+.version-display:hover {
+    color: rgba(255, 255, 255, 0.8);
+    background: rgba(0, 0, 0, 0.5);
+}
+
+/* ===== CHANGELOG MODAL ===== */
+.changelog-modal {
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.changelog-modal h2 {
+    color: #ffd700;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.changelog-content {
+    margin-bottom: 20px;
+}
+
+.changelog-release {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-left: 4px solid #ffd700;
+}
+
+.changelog-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.changelog-version {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #00ff00;
+}
+
+.changelog-date {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.changelog-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.changelog-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-size: 0.9rem;
+    color: #ddd;
+}
+
+.changelog-list li:last-child {
+    border-bottom: none;
+}
+
+@media (max-width: 768px) {
+    .version-display {
+        font-size: 0.65rem;
+        padding: 3px 6px;
+    }
+
+    .changelog-modal {
+        max-height: 70vh;
+    }
+
+    .changelog-version {
+        font-size: 1rem;
+    }
+
+    .changelog-list li {
+        font-size: 0.8rem;
+    }
+}

@@ -1,5 +1,111 @@
 // ===== ZOMBIE CLICKER - GAME LOGIC =====
 
+// ===== VERSION SYSTEM =====
+const VERSION = {
+    major: 1,
+    minor: 0,
+    patch: 0,
+    build: '2026.01.29',
+    get string() {
+        return `v${this.major}.${this.minor}.${this.patch}`;
+    },
+    get full() {
+        return `v${this.major}.${this.minor}.${this.patch} (Build ${this.build})`;
+    }
+};
+
+const CHANGELOG = [
+    {
+        version: '1.0.0',
+        date: '2026-01-29',
+        changes: [
+            '🎮 Initial public release',
+            '🧟 Core clicker gameplay with upgrades',
+            '🗺️ 7 unique locations with themed backgrounds',
+            '⛈️ Weather effects (rain, fog, storm, embers, etc.)',
+            '🌅 Day/night cycle',
+            '👹 Boss battles with health bars',
+            '🌊 Zombie wave events',
+            '⭐ 6-tier prestige system with 21 upgrades',
+            '🏅 65+ achievements',
+            '🔥 Combo system for fast clicking',
+            '👑 Golden zombies with bonus rewards',
+            '🎁 Daily login rewards with streak bonuses',
+            '⌨️ Keyboard support (Space/Enter to click)',
+            '📱 Mobile and desktop responsive design',
+            '💾 Auto-save with localStorage',
+            '🩸 Blood splatter and particle effects',
+            '🎵 Procedural sound effects'
+        ]
+    }
+];
+
+function logVersion() {
+    console.log('%c🧟 Zombie Apocalypse Survivor 🧟', 'font-size: 20px; font-weight: bold; color: #ff4444;');
+    console.log(`%c${VERSION.full}`, 'font-size: 14px; color: #00ff00;');
+    console.log('%cDeveloped with Claude AI', 'font-size: 12px; color: #888;');
+    console.log('%c---', 'color: #444;');
+}
+
+function getVersionInfo() {
+    return {
+        version: VERSION.string,
+        fullVersion: VERSION.full,
+        changelog: CHANGELOG
+    };
+}
+
+function showVersionInUI() {
+    // Add version to footer or create version display
+    const versionDisplay = document.createElement('div');
+    versionDisplay.className = 'version-display';
+    versionDisplay.textContent = VERSION.string;
+    versionDisplay.title = `Build: ${VERSION.build}\nClick for changelog`;
+    versionDisplay.addEventListener('click', showChangelogModal);
+    document.body.appendChild(versionDisplay);
+}
+
+function showChangelogModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+
+    let changelogHTML = CHANGELOG.map(release => `
+        <div class="changelog-release">
+            <div class="changelog-header">
+                <span class="changelog-version">v${release.version}</span>
+                <span class="changelog-date">${release.date}</span>
+            </div>
+            <ul class="changelog-list">
+                ${release.changes.map(change => `<li>${change}</li>`).join('')}
+            </ul>
+        </div>
+    `).join('');
+
+    overlay.innerHTML = `
+        <div class="modal-content changelog-modal">
+            <h2>📜 Changelog</h2>
+            <div class="changelog-content">
+                ${changelogHTML}
+            </div>
+            <button class="modal-close">Close</button>
+        </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('.modal-close').addEventListener('click', () => {
+        overlay.classList.add('fade-out');
+        setTimeout(() => overlay.remove(), 300);
+    });
+
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) {
+            overlay.classList.add('fade-out');
+            setTimeout(() => overlay.remove(), 300);
+        }
+    });
+}
+
 // ===== SOUND SYSTEM =====
 const SoundManager = {
     enabled: true,
@@ -2753,6 +2859,9 @@ function toggleSound() {
 
 // ===== INITIALIZATION =====
 function init() {
+    // Log version info to console
+    logVersion();
+
     SoundManager.init();
     elements.zombieEmoji = document.querySelector('.zombie-emoji');
     elements.eventDisplay = document.getElementById('event-display');
@@ -2761,6 +2870,9 @@ function init() {
 
     initUpgrades();
     loadGame();
+
+    // Show version in UI
+    showVersionInUI();
     applyLocationTheme();
     updateDisplay();
     changeZombie();
