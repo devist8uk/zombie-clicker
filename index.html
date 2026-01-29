@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Apocalypse Survivor</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="game-container">
+        <!-- Header -->
+        <header class="game-header">
+            <h1>🧟 Zombie Apocalypse Survivor 🧟</h1>
+            <div class="location-display">
+                <span id="location-name">🏘️ Abandoned Suburbs</span>
+            </div>
+            <div class="kill-counter">
+                <span class="kills-label">Zombies Killed:</span>
+                <span id="kill-count" class="kills-value">0</span>
+            </div>
+            <div class="crit-info">⚡ 5% Critical Hit Chance (10x Damage!)</div>
+        </header>
+
+        <!-- Main Game Area -->
+        <main class="game-main">
+            <!-- Event Display (Boss/Wave) -->
+            <div id="event-display" class="event-display"></div>
+
+            <!-- Click Area -->
+            <section class="click-section">
+                <div id="zombie-target" class="zombie-target">
+                    <div class="zombie-emoji">🧟</div>
+                    <div class="click-text">CLICK TO KILL!</div>
+                </div>
+                <div id="floating-numbers" class="floating-numbers"></div>
+                <div id="particle-container" class="particle-container"></div>
+            </section>
+
+            <!-- Stats Panel -->
+            <section class="stats-section">
+                <h2>📊 Stats</h2>
+                <div class="stat-row">
+                    <span class="stat-label">Per Click:</span>
+                    <span id="per-click" class="stat-value">1</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Per Second:</span>
+                    <span id="per-second" class="stat-value">0</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Total Killed:</span>
+                    <span id="total-killed" class="stat-value">0</span>
+                </div>
+            </section>
+        </main>
+
+        <!-- Shop -->
+        <aside class="shop-section">
+            <h2>🏪 Survivor Shop</h2>
+
+            <div class="shop-category">
+                <h3>⚔️ Weapons (Click Power)</h3>
+                <div id="weapon-upgrades" class="upgrade-list">
+                    <!-- Weapons populated by JS -->
+                </div>
+            </div>
+
+            <div class="shop-category">
+                <h3>👥 Survivors (Auto-Kill)</h3>
+                <div id="survivor-upgrades" class="upgrade-list">
+                    <!-- Survivors populated by JS -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Footer (simplified) -->
+        <footer class="game-footer">
+            <button id="sound-btn" class="footer-btn sound-btn">🔊 Sound</button>
+            <button id="save-btn" class="footer-btn">💾 Save</button>
+            <button id="reset-btn" class="footer-btn reset-btn">🔄 Reset</button>
+            <button id="toggle-panel-btn" class="footer-btn panel-toggle-btn">📋 Menu</button>
+        </footer>
+    </div>
+
+    <!-- Side Panel -->
+    <div id="side-panel" class="side-panel">
+        <div class="side-panel-tabs">
+            <button class="tab-btn active" data-tab="locations">🗺️</button>
+            <button class="tab-btn" data-tab="prestige">⭐</button>
+            <button class="tab-btn" data-tab="stats">📊</button>
+            <button class="tab-btn" data-tab="achievements">🏅</button>
+        </div>
+        <div class="side-panel-content">
+            <div id="tab-locations" class="tab-content active">
+                <!-- Locations content loaded by JS -->
+            </div>
+            <div id="tab-prestige" class="tab-content">
+                <!-- Prestige content loaded by JS -->
+            </div>
+            <div id="tab-stats" class="tab-content">
+                <!-- Stats content loaded by JS -->
+            </div>
+            <div id="tab-achievements" class="tab-content">
+                <!-- Achievements content loaded by JS -->
+            </div>
+        </div>
+    </div>
+
+    <script src="game.js"></script>
+</body>
+</html>
