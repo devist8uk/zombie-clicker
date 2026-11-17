@@ -31,6 +31,18 @@
     });
 
   const settings = byId("settings");
+  const shake = byId("camera-shake");
+  try {
+    shake.checked = localStorage.getItem("deadFrequencyCameraShake") !== "off";
+  } catch { /* Browser storage may be unavailable. */ }
+  const setShake = () => {
+    document.documentElement.dataset.shake = shake.checked ? "on" : "off";
+  };
+  setShake();
+  shake.addEventListener("change", () => {
+    setShake();
+    try { localStorage.setItem("deadFrequencyCameraShake", document.documentElement.dataset.shake); } catch {}
+  });
   byId("settings-btn").addEventListener("click", () => settings.showModal());
   byId("save-btn").addEventListener("click", () => settings.close());
   byId("close-panel").addEventListener("click", toggleSidePanel);
@@ -72,6 +84,9 @@
           selectedSector.unlockKills.toLocaleString("en-US") +
           " total kills.");
     detail.style.setProperty("--thumb", 'url("' + scenePath(index) + '")');
+    const sighting = byId("watch-rex");
+    sighting.hidden = index !== 0 || !current;
+    sighting.disabled = gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive || rexEntrancePending;
     const travel = byId("travel-btn");
     travel.textContent = current
       ? "Return to combat"
@@ -80,6 +95,13 @@
         : "Close map entry";
     detail.showModal();
   }
+  byId("watch-rex").addEventListener("click", () => {
+    detail.close();
+    byId("zombie-target").focus();
+    if (rexEntrancePending || gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive) return;
+    if (SoundManager.enabled && !SoundManager.audioContext) SoundManager.init();
+    playRexEntrance();
+  });
   byId("travel-btn").addEventListener("click", () => {
     if (gameState.unlockedLocations.includes(selectedSector.id)) {
       if (getCurrentLocation().id !== selectedSector.id)

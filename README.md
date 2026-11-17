@@ -8,6 +8,10 @@ Strike the infected to earn kills. Spend your kill balance in the Armory. Weapon
 
 Land 20 strikes to charge Overdrive. Activate it for eight seconds of triple strike power, or hold the charge for a wave or boss. Rapid strikes build a combo, and the rare golden infected gives a brief opportunity for a bonus. Open the sector map to inspect a location or travel to an unlocked one for a higher multiplier.
 
+In the petrol station, the Attendant tracks your aim and reacts to hits. Buy the baseball bat for its sweeping strike. When the first Rex approaches, you can keep earning kills through the footfalls and canopy breach. The boss timer starts when the Rex arrives. To watch the entrance on demand, open the current Abandoned Suburbs card on the sector map and select **Replay Rex sighting**.
+
+Camera shake can be switched off in Settings. The game also follows your device’s reduced-motion preference. The short Higgsfield Rex film loads when the warning begins, with an illustrated fallback.
+
 After 100,000 total kills in a run, the Field log offers prestige. This starts another run with persistent bonuses. Settings contains the manual save and reset controls.
 
 | Control | Action |

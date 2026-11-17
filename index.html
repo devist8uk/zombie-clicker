@@ -15,6 +15,9 @@
     <link rel="icon" href="assets/signal.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="field-log.css" />
+    <link rel="stylesheet" href="attendant.css" />
+    <link rel="stylesheet" href="combat-motion.css" />
+    <link rel="stylesheet" href="rex-entrance.css" />
   </head>
   <body data-location="suburbs">
     <svg width="0" height="0" aria-hidden="true" class="symbols">
@@ -235,7 +238,7 @@
               <span class="action-tag"
                 ><svg aria-hidden="true" class="icon">
                   <use href="#i-cross"></use></svg
-                >Strike infected <kbd>Space</kbd></span
+                ><span id="strike-verb">Strike infected</span> <kbd>Space</kbd></span
               >
               <span class="specimen"
                 ><span id="target-type">Common infected</span
@@ -413,6 +416,7 @@
         </form>
       </div>
       <p>Progress saves automatically on this browser.</p>
+      <label class="shake-setting"><input type="checkbox" id="camera-shake" checked /> Camera shake</label>
       <div class="settings-actions">
         <button id="save-btn">Save progress</button
         ><button id="reset-btn">Reset game</button>
@@ -445,10 +449,14 @@
         <h2 id="detail-name"></h2>
         <p id="detail-note"></p>
         <button id="travel-btn">Enter sector</button>
+        <button id="watch-rex" hidden>Replay Rex sighting</button>
       </div>
     </dialog>
-    <script src="game.js"></script>
-    <script src="interface.js"></script>
+    <script src="game.js?v=2.1.0"></script>
+    <script src="interface.js?v=2.1.0"></script>
     <script src="encounter-fx.js"></script>
+    <script src="attendant.js"></script>
+    <script src="combat-motion.js"></script>
+    <script src="rex-entrance.js"></script>
   </body>
 </html>

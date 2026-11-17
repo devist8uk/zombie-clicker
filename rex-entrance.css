@@ -1,0 +1,87 @@
+.station-props,.rex-plate,.canopy-debris {
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  overflow:hidden;
+  pointer-events:none;
+}
+.station-props {display:none}
+body[data-location="suburbs"] #zombie-target:not(.boss-active):not(.golden-zombie) .station-props {display:block}
+.pump-sign {
+  position:absolute;
+  left:14%; top:59%;
+  width:clamp(22px,3.9%,42px);
+  height:clamp(11px,1.1vw,15px);
+  transform-origin:46% -60%;
+  transform:rotate(-4deg) skewY(-3deg);
+  border:1px solid #976956;
+  background:linear-gradient(#5c2b20,#351f18);
+  color:#ffb583;
+  font:700 clamp(6px,.65vw,10px)/1 var(--display);
+  letter-spacing:.12em;
+  display:grid;place-items:center;
+  box-shadow:0 0 6px #ea672333;
+}
+.pump-sign:before,.pump-sign:after {
+  content:"";position:absolute;bottom:100%;width:1px;height:8px;background:#91867b;
+}
+.pump-sign:before{left:10%}.pump-sign:after{right:10%}
+#zombie-target[data-canopy="damaged"] .pump-sign {transform:translateY(4px) rotate(27deg);color:#bf8562}
+#zombie-target[data-canopy="damaged"] .pump-sign:after {display:none}
+.road-puddle {position:absolute;left:21%;bottom:13%;width:15%;height:3.3%}
+.road-puddle i {
+  position:absolute;inset:0;border:1px solid #efdab4;border-radius:50%;
+  opacity:0;transform:scale(.02)
+}
+#zombie-target[data-rex-phase="footfall"] .road-puddle i {animation:puddle-wave .84s ease-out both}
+#zombie-target[data-rex-phase="approach"] .road-puddle i {animation:puddle-near .82s ease-out both}
+#zombie-target[data-rex-phase] .road-puddle i:nth-child(2){animation-delay:.14s}
+#zombie-target[data-rex-phase] .road-puddle i:nth-child(3){animation-delay:.24s}
+@keyframes puddle-wave {0%{opacity:.85;transform:scale(.02)}100%{opacity:0;transform:scale(1)}}
+@keyframes puddle-near {0%{opacity:.95;transform:scale(.08)}100%{opacity:0;transform:scale(1.48)}}
+#zombie-target[data-rex-phase="approach"] .pump-sign {animation:sign-rattle .8s ease-out both}
+@keyframes sign-rattle{0%{rotate:0deg}18%{rotate:-19deg}44%{rotate:12deg}70%{rotate:-7deg}100%{rotate:3deg}}
+.rex-plate {display:none;background:#1b1412 url("assets/boss-rex.jpg") 66% center/cover}
+.rex-film {
+  position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:60% center;
+  opacity:0;pointer-events:none;
+}
+.rex-film.playing {animation:rex-film-exposure 2.94s linear both}
+@keyframes rex-film-exposure{0%{opacity:0}6%,89%{opacity:1}100%{opacity:0}}
+#zombie-target[data-rex-phase="breach"] .rex-plate {display:block;animation:canopy-split .46s cubic-bezier(.18,.76,.27,.99) both, rex-arrives 2.8s ease-out both}
+@keyframes canopy-split{
+  from{clip-path:polygon(100% 0,100% 0,100% 100%,100% 100%,100% 68%,100% 66%,100% 42%,100% 25%)}
+  to{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,0 68%,0 66%,0 42%,0 25%)}
+}
+@keyframes rex-arrives{0%{background-size:auto 141%;filter:contrast(1.2)}65%{background-size:auto 106%}100%{background-size:auto 100%;filter:none}}
+.canopy-debris i {
+  position:absolute;top:49%;height:5px;
+  background:#eab087;border-bottom:2px solid #492f25;opacity:0;
+  clip-path:polygon(0 28%,100% 0,80% 100%,5% 90%);
+}
+#zombie-target[data-rex-phase="breach"] .canopy-debris i {animation:canopy-shard .85s ease-out both}
+@keyframes canopy-shard{0%{opacity:0}8%{opacity:1}50%{transform:translate(var(--launch-x),var(--launch-y)) rotate(var(--spin))}100%{opacity:0;transform:translate(var(--launch-x),140px) rotate(var(--spin))}}
+#zombie-target[data-rex-phase] .scene-text {opacity:.3;transition:opacity .3s}
+#zombie-target[data-rex-phase="breach"] .scene-text {opacity:.14}
+.seismic-reading {
+  display:none;align-items:center;gap:8px;
+  position:absolute;left:clamp(18px,2vw,37px);bottom:26%;padding:6px 9px;
+  color:#ffe1a0;background:#1f1c17ec;border-left:2px solid #ff955a;
+  font:700 clamp(9px,.8vw,12px)/1 var(--mono);letter-spacing:.055em;text-transform:uppercase;
+  pointer-events:none;
+}
+[data-rex-phase] .seismic-reading{display:flex}
+.seismograph{height:19px;display:flex;align-items:center;gap:2px}
+.seismograph i{width:2px;background:var(--ember)}
+[data-rex-phase="approach"] .seismograph{transform:scaleY(1.3)}
+.station-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+html:not([data-shake="off"]) .click-section:has([data-rex-phase="breach"]) {animation:canopy-impact .5s ease-out}
+@keyframes canopy-impact{0%,100%{translate:0 0}10%{translate:-5px 3px}25%{translate:4px -2px}46%{translate:-3px 1px}70%{translate:1px 0}}
+.shake-setting {display:flex;align-items:center;gap:8px;margin:12px 0 18px;color:var(--paper);font-size:14px}
+.shake-setting input{accent-color:var(--acid);width:16px;height:16px}
+#watch-rex {border:1px solid var(--line);border-radius:3px;min-height:36px;font-size:12px;color:var(--paper);margin:4px 0;padding:6px 10px;}
+#watch-rex:disabled{opacity:.55}
+@media(prefers-reduced-motion:reduce){
+  #zombie-target[data-rex-phase] .rex-plate,.click-section:has([data-rex-phase]),#zombie-target[data-rex-phase] .pump-sign {animation:none!important}
+  #zombie-target[data-rex-phase] .road-puddle,#zombie-target[data-rex-phase] .canopy-debris {display:none}
+}

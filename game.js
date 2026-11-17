@@ -3,7 +3,7 @@
 // ===== VERSION SYSTEM =====
 const VERSION = {
     major: 2,
-    minor: 0,
+    minor: 1,
     patch: 0,
     build: '2026.11.17',
     get string() {
@@ -15,6 +15,7 @@ const VERSION = {
 };
 
 const CHANGELOG = [
+    { version: '2.1.0', date: '2026-11-17', changes: ['The petrol station Attendant moves, watches and recoils from strikes.', 'The baseball bat has its own swing and Overdrive takes over the broadcast.', 'Footfalls announce the Rex before it breaks through the canopy.'] },
     { version: '2.0.0', date: '2026-11-17', changes: ['Illustrated combat sectors and a rebuilt armory.', 'Charge Overdrive with 20 strikes, then unleash triple damage for eight seconds.', 'Keyboard and touch combat, a streamlined field guide, and compatible saves.'] },
     {
         version: '1.0.0',
@@ -692,6 +693,7 @@ function switchLocation(locationId) {
         return;
     }
 
+    if (locationId !== gameState.currentLocation) cancelRexEntrance();
     gameState.currentLocation = locationId;
     applyLocationTheme();
     SoundManager.playPurchase();
@@ -749,6 +751,7 @@ function activateOverdrive() {
     if (overdriveActive() || gameState.overdriveCharge < DRIVE_HITS) return;
     gameState.overdriveCharge = 0;
     gameState.overdriveUntil = Date.now() + DRIVE_DURATION;
+    document.dispatchEvent(new CustomEvent('drive-start'));
     SoundManager.playCombo();
     updateDisplay();
     saveGame();
@@ -826,7 +829,7 @@ function checkGoldenZombieSpawn() {
     const baseChance = 0.005;
     const goldenChance = baseChance + (gameState.prestigeBonuses.goldenChance || 0);
 
-    if (!gameState.bossActive && !gameState.waveActive && !gameState.goldenZombieActive) {
+    if (!rexEntrancePending && !gameState.bossActive && !gameState.waveActive && !gameState.goldenZombieActive) {
         if (Math.random() < goldenChance) {
             spawnGoldenZombie();
         }
@@ -1005,10 +1008,47 @@ function getBossForLevel() {
     };
 }
 
-function spawnBoss() {
-    if (gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive) return;
+let rexEntrancePending = false;
+let rexTimers = [];
+let introducedRex = false;
 
+function cueRex(phase) {
+    document.dispatchEvent(new CustomEvent('rex-cue', { detail: { phase } }));
+}
+
+function cancelRexEntrance() {
+    rexTimers.forEach(clearTimeout);
+    rexTimers = [];
+    if (rexEntrancePending) cueRex('clear');
+    rexEntrancePending = false;
+}
+
+function playRexEntrance(onArrival) {
+    rexEntrancePending = true;
+    cueRex('footfall');
+    rexTimers = [
+        setTimeout(() => cueRex('approach'), 850),
+        setTimeout(() => cueRex('breach'), 1650),
+        setTimeout(() => {
+            cancelRexEntrance();
+            if (onArrival) onArrival();
+        }, 4650)
+    ];
+}
+
+function spawnBoss() {
+    if (rexEntrancePending || gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive) return;
     const boss = getBossForLevel();
+    if (boss.tier === 1 && gameState.currentLocation === 'suburbs' && !document.hidden) {
+        // The station remains playable during the warning. The boss clock begins on arrival.
+        playRexEntrance(() => beginBoss(boss));
+    } else {
+        beginBoss(boss);
+    }
+}
+
+function beginBoss(boss) {
+    if (boss.tier === 1) introducedRex = true;
     gameState.bossActive = true;
     gameState.currentBoss = boss;
     gameState.bossHealth = boss.health;
@@ -1016,6 +1056,7 @@ function spawnBoss() {
     gameState.bossTimer = gameState.bossDuration + gameState.prestigeBonuses.eventTime;
 
     elements.zombieTarget.classList.add('boss-active');
+    updateTarget();
 
     SoundManager.playBossAppear();
     updateEventDisplay();
@@ -1040,6 +1081,7 @@ function damageBoss(damage) {
 }
 
 function defeatBoss() {
+    if (gameState.currentBoss.tier === 1 && gameState.currentLocation === 'suburbs') cueRex('wrecked');
     const reward = gameState.currentBoss.reward;
     gameState.kills += reward;
     gameState.totalKills += reward;
@@ -1087,7 +1129,7 @@ function showBossVictory(boss, reward) {
 
 // ===== ZOMBIE WAVE SYSTEM =====
 function startWave(intro = false) {
-    if (gameState.waveActive || gameState.bossActive || gameState.goldenZombieActive) return;
+    if (rexEntrancePending || gameState.waveActive || gameState.bossActive || gameState.goldenZombieActive) return;
 
     gameState.waveNumber++;
     gameState.waveActive = true;
@@ -1403,6 +1445,8 @@ function doPrestige() {
         return;
     }
 
+    cancelRexEntrance();
+    introducedRex = false;
     // Award prestige points
     gameState.prestigePoints += pointsToGain;
     gameState.totalPrestigePoints += pointsToGain;
@@ -1500,6 +1544,7 @@ function showMilestone(milestone) {
 
 // ===== UI UPDATES =====
 function updateDisplay() {
+    writeText('strike-verb', gameState.upgrades.baseball_bat > 0 ? 'Swing bat' : 'Strike infected');
     elements.killCount.textContent = formatNumber(gameState.kills);
     elements.perClick.textContent = formatNumber(getEffectiveClickPower());
     elements.perSecond.textContent = formatNumber(getEffectiveAutoPower());
@@ -1551,6 +1596,15 @@ function onZombieClick(event) {
     const wasGolden = gameState.goldenZombieActive;
     const wasBoss = gameState.bossActive;
     const critical = !wasGolden && rollCritical();
+    const weapon = gameState.upgrades.baseball_bat > 0 ? 'bat' : 'fists';
+    const drive = overdriveActive();
+    const bounds = elements.zombieTarget.getBoundingClientRect();
+    const clamp = value => Math.min(1, Math.max(0, value));
+    const x = event.detail ? clamp((event.clientX - bounds.left) / bounds.width) : 0.65;
+    const y = event.detail ? clamp((event.clientY - bounds.top) / bounds.height) : 0.45;
+    document.dispatchEvent(new CustomEvent('combat-strike', {
+        detail: { x, y, weapon, critical, overdrive: drive, boss: wasBoss, golden: wasGolden }
+    }));
     let amount;
     if (wasGolden) {
         amount = clickGoldenZombie();
@@ -1566,7 +1620,7 @@ function onZombieClick(event) {
             damageBoss(damage);
         } else {
             amount = damage;
-            if (!critical) SoundManager.playClick();
+            if (!critical && weapon === 'fists' && !drive) SoundManager.playClick();
             gameState.kills += damage;
             gameState.totalKills += damage;
             addWaveKill(damage);
@@ -1578,7 +1632,7 @@ function onZombieClick(event) {
     clearTimeout(releaseHit);
     releaseHit = setTimeout(() => elements.zombieTarget.classList.remove('clicked', 'critical-hit'), 140);
     if (gameState.totalClicks === 18 && !gameState.waveNumber) startWave(true);
-    else if (gameState.totalClicks === 65 && !gameState.bossesDefeated) spawnBoss();
+    else if (gameState.totalClicks >= 65 && !introducedRex && !gameState.bossesDefeated) spawnBoss();
     else if (!wasGolden && !wasBoss) checkGoldenZombieSpawn();
 
     checkMilestones();
@@ -1642,6 +1696,7 @@ function purchaseUpgrade(upgrade) {
         gameState.kills -= cost;
         gameState.upgrades[upgrade.id] = (gameState.upgrades[upgrade.id] || 0) + 1;
         gameState.totalUpgradesBought++;
+        document.dispatchEvent(new CustomEvent('combat-purchase', { detail: { id: upgrade.id } }));
 
         if (upgrade.type === 'click') {
             gameState.killsPerClick += upgrade.effect;
@@ -1800,6 +1855,9 @@ const freshGame = JSON.stringify(gameState);
 
 function resetGame() {
     if (!confirm('Reset the game? This erases your kills, upgrades and achievements.')) return;
+    cancelRexEntrance();
+    introducedRex = false;
+    cueRex('restored');
     clearTimeout(goldenExpiry);
     const sound = gameState.soundEnabled;
     Object.assign(gameState, JSON.parse(freshGame), { sessionStartTime: Date.now(), lastDailyReward: Date.now(), soundEnabled: sound });
