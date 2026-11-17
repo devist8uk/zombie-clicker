@@ -2,10 +2,10 @@
 
 // ===== VERSION SYSTEM =====
 const VERSION = {
-    major: 1,
+    major: 2,
     minor: 0,
     patch: 0,
-    build: '2026.01.29',
+    build: '2026.11.17',
     get string() {
         return `v${this.major}.${this.minor}.${this.patch}`;
     },
@@ -15,6 +15,7 @@ const VERSION = {
 };
 
 const CHANGELOG = [
+    { version: '2.0.0', date: '2026-11-17', changes: ['Illustrated combat sectors and a rebuilt armory.', 'Charge Overdrive with 20 strikes, then unleash triple damage for eight seconds.', 'Keyboard and touch combat, a streamlined field guide, and compatible saves.'] },
     {
         version: '1.0.0',
         date: '2026-01-29',
@@ -41,10 +42,7 @@ const CHANGELOG = [
 ];
 
 function logVersion() {
-    console.log('%c🧟 Zombie Apocalypse Survivor 🧟', 'font-size: 20px; font-weight: bold; color: #ff4444;');
-    console.log(`%c${VERSION.full}`, 'font-size: 14px; color: #00ff00;');
-    console.log('%cDeveloped with Claude AI', 'font-size: 12px; color: #888;');
-    console.log('%c---', 'color: #444;');
+    console.info('Zombie Clicker ' + VERSION.full);
 }
 
 function getVersionInfo() {
@@ -56,54 +54,32 @@ function getVersionInfo() {
 }
 
 function showVersionInUI() {
-    // Add version to footer or create version display
-    const versionDisplay = document.createElement('div');
-    versionDisplay.className = 'version-display';
-    versionDisplay.textContent = VERSION.string;
-    versionDisplay.title = `Build: ${VERSION.build}\nClick for changelog`;
-    versionDisplay.addEventListener('click', showChangelogModal);
-    document.body.appendChild(versionDisplay);
+    const button = document.getElementById('release-notes');
+    if (!button) return;
+    button.textContent = VERSION.string;
+    button.addEventListener('click', showChangelogModal);
 }
 
 function showChangelogModal() {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-
-    let changelogHTML = CHANGELOG.map(release => `
-        <div class="changelog-release">
-            <div class="changelog-header">
-                <span class="changelog-version">v${release.version}</span>
-                <span class="changelog-date">${release.date}</span>
-            </div>
-            <ul class="changelog-list">
-                ${release.changes.map(change => `<li>${change}</li>`).join('')}
-            </ul>
-        </div>
-    `).join('');
-
-    overlay.innerHTML = `
-        <div class="modal-content changelog-modal">
-            <h2>📜 Changelog</h2>
-            <div class="changelog-content">
-                ${changelogHTML}
-            </div>
-            <button class="modal-close">Close</button>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('.modal-close').addEventListener('click', () => {
-        overlay.classList.add('fade-out');
-        setTimeout(() => overlay.remove(), 300);
+    const dialog = document.createElement('dialog');
+    dialog.className = 'release-dialog';
+    dialog.setAttribute('aria-labelledby', 'release-title');
+    const entries = CHANGELOG.map(release =>
+        '<section class="changelog-release"><div class="changelog-header">' +
+        '<strong>v' + release.version + '</strong><time class="changelog-date">' + release.date +
+        '</time></div><ul class="changelog-list">' +
+        release.changes.map(change => '<li>' + change + '</li>').join('') + '</ul></section>'
+    ).join('');
+    dialog.innerHTML = '<div class="release-head"><h2 id="release-title">Release notes</h2>' +
+        '<form method="dialog"><button class="modal-close" autofocus>Close</button></form></div>' + entries;
+    document.body.appendChild(dialog);
+    dialog.addEventListener('close', () => dialog.remove(), { once: true });
+    dialog.addEventListener('click', event => {
+        if (event.target !== dialog) return;
+        const box = dialog.getBoundingClientRect();
+        if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) dialog.close();
     });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 300);
-        }
-    });
+    dialog.showModal();
 }
 
 // ===== SOUND SYSTEM =====
@@ -132,16 +108,27 @@ const SoundManager = {
         oscillator.frequency.value = frequency;
         oscillator.type = type;
 
-        gainNode.gain.setValueAtTime(volume, this.audioContext.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + duration);
+        gainNode.gain.setValueAtTime(volume * 0.5, this.audioContext.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.001, this.audioContext.currentTime + duration);
 
         oscillator.start(this.audioContext.currentTime);
         oscillator.stop(this.audioContext.currentTime + duration);
     },
 
     playClick() {
-        this.playTone(200, 0.1, 'square', 0.2);
-        setTimeout(() => this.playTone(150, 0.05, 'square', 0.1), 30);
+        // A short descending strike with a higher attack as the combo grows.
+        if (!this.audioContext || !this.enabled) return;
+        const now = this.audioContext.currentTime;
+        const thump = this.audioContext.createOscillator();
+        const envelope = this.audioContext.createGain();
+        thump.type = 'triangle';
+        thump.frequency.setValueAtTime(170 + Math.min(gameState.comboCount, 20) * 3, now);
+        thump.frequency.exponentialRampToValueAtTime(45, now + 0.08);
+        envelope.gain.setValueAtTime(0.21, now);
+        envelope.gain.exponentialRampToValueAtTime(0.001, now + 0.105);
+        thump.connect(envelope).connect(this.audioContext.destination);
+        thump.start(now);
+        thump.stop(now + 0.11);
     },
 
     playCritical() {
@@ -236,19 +223,7 @@ const SoundManager = {
     }
 };
 
-// ===== ZOMBIE TYPES =====
-const zombieTypes = [
-    { emoji: '🧟', name: 'Zombie' },
-    { emoji: '🧟‍♂️', name: 'Male Zombie' },
-    { emoji: '🧟‍♀️', name: 'Female Zombie' },
-    { emoji: '💀', name: 'Skeleton' },
-    { emoji: '👻', name: 'Ghost' },
-    { emoji: '🦴', name: 'Bones' },
-    { emoji: '😈', name: 'Demon' },
-    { emoji: '👹', name: 'Ogre' },
-    { emoji: '👺', name: 'Goblin' },
-    { emoji: '🎃', name: 'Pumpkin Head' }
-];
+const sectorTargets = ['The Attendant', 'Patient Zero', 'The Night Clerk', 'The Deserter', 'Specimen Nine', 'The Gatekeeper', 'The Hollow One'];
 
 // ===== LOCATIONS SYSTEM =====
 const locations = [
@@ -484,6 +459,8 @@ const prestigeUpgrades = [
 
 // ===== GAME STATE =====
 const gameState = {
+    overdriveCharge: 0,
+    overdriveUntil: 0,
     kills: 0,
     totalKills: 0,
     killsPerClick: 1,
@@ -599,7 +576,6 @@ const elements = {
     perSecond: document.getElementById('per-second'),
     totalKilled: document.getElementById('total-killed'),
     zombieTarget: document.getElementById('zombie-target'),
-    zombieEmoji: null,
     floatingNumbers: document.getElementById('floating-numbers'),
     weaponUpgrades: document.getElementById('weapon-upgrades'),
     survivorUpgrades: document.getElementById('survivor-upgrades'),
@@ -647,22 +623,27 @@ function formatTime(seconds) {
     return `${secs}s`;
 }
 
-function getRandomZombie() {
-    const location = getCurrentLocation();
-    // 50% chance to use location-specific zombies
-    if (location && location.specialZombies && Math.random() < 0.5) {
-        const emoji = location.specialZombies[Math.floor(Math.random() * location.specialZombies.length)];
-        return { emoji, name: 'Zombie' };
-    }
-    return zombieTypes[Math.floor(Math.random() * zombieTypes.length)];
+function updateTarget() {
+    const index = locations.indexOf(getCurrentLocation());
+    if (gameState.bossActive) elements.zombieTarget.dataset.bossTier = String(gameState.currentBoss.tier);
+    else delete elements.zombieTarget.dataset.bossTier;
+    const name = gameState.bossActive ? gameState.currentBoss.name :
+        gameState.goldenZombieActive ? 'The Gilded One' : sectorTargets[index];
+    const type = gameState.bossActive ? 'Boss infected' : gameState.goldenZombieActive ?
+        'Golden infected' : gameState.waveActive ? 'Horde infected' : 'Common infected';
+    writeText('target-name', name);
+    writeText('target-type', type);
+    elements.zombieTarget.setAttribute('aria-label', 'Strike ' + name);
 }
 
-function changeZombie() {
-    if (gameState.bossActive) return; // Don't change during boss
-    const zombie = getRandomZombie();
-    if (elements.zombieEmoji) {
-        elements.zombieEmoji.textContent = zombie.emoji;
-    }
+function writeText(id, value) {
+    const node = document.getElementById(id);
+    const text = String(value);
+    if (node && node.textContent !== text) node.textContent = text;
+}
+
+function locationLabel(location) {
+    return location.name.slice(location.name.indexOf(' ') + 1);
 }
 
 // ===== LOCATION SYSTEM =====
@@ -687,6 +668,7 @@ function checkLocationUnlocks() {
         }
     });
     if (newUnlock) {
+        document.dispatchEvent(new CustomEvent('sectors-changed'));
         checkAchievements();
         saveGame();
     }
@@ -718,410 +700,58 @@ function switchLocation(locationId) {
 
 function applyLocationTheme() {
     const location = getCurrentLocation();
-    if (!location) return;
+    document.body.dataset.location = location.id;
+    writeText('location-name', locationLabel(location));
+    writeText('sector-index', String(locations.indexOf(location) + 1).padStart(2, '0'));
+    updateTarget();
+    updateDisplay();
+    document.dispatchEvent(new CustomEvent('sectors-changed'));
+}
 
-    // Apply background gradient
-    document.body.style.background = location.background;
+function updateSectorProgress() {
+    const next = locations.find(location => !gameState.unlockedLocations.includes(location.id));
+    const max = next ? next.unlockKills : locations[locations.length - 1].unlockKills;
+    const value = next ? Math.min(gameState.totalKills, max) : max;
+    writeText('next-sector-name', next ? locationLabel(next) : 'All sectors unlocked');
+    writeText('sector-progress-text', next ? value.toLocaleString('en-US') + ' / ' + max.toLocaleString('en-US') + ' kills' : '7 / 7 sectors');
+    const bar = document.getElementById('sector-progress');
+    if (bar) { bar.max = max; bar.value = value; }
+}
 
-    // Update zombie target glow color
-    const root = document.documentElement;
-    root.style.setProperty('--location-color', location.ambientColor);
+// Overdrive runs on elapsed time so background tabs cannot stretch its duration.
+const DRIVE_HITS = 20;
+const DRIVE_DURATION = 8000;
 
-    // Update location name display
-    if (elements.locationName) {
-        elements.locationName.textContent = location.name;
+function overdriveActive() {
+    return gameState.overdriveUntil > Date.now();
+}
+
+function updateOverdrive() {
+    const active = overdriveActive();
+    const ready = gameState.overdriveCharge >= DRIVE_HITS;
+    const remaining = Math.max(0, gameState.overdriveUntil - Date.now());
+    document.body.dataset.overdrive = active ? 'active' : ready ? 'ready' : 'charging';
+    const meter = document.getElementById('overdrive-meter');
+    if (meter) {
+        meter.max = DRIVE_HITS;
+        meter.value = active ? remaining / DRIVE_DURATION * DRIVE_HITS : gameState.overdriveCharge;
     }
-
-    // Apply themed background elements
-    createLocationBackground(location);
-
-    // Start weather effects for this location
-    startWeatherEffects();
-
-    // Change zombie to location type
-    changeZombie();
-}
-
-function createLocationBackground(location) {
-    // Remove existing background elements
-    const existingBg = document.querySelector('.location-bg-elements');
-    if (existingBg) existingBg.remove();
-
-    // Create container for background elements
-    const bgContainer = document.createElement('div');
-    bgContainer.className = 'location-bg-elements';
-
-    // Create many more floating background emojis with varied sizes
-    if (location.bgElements && location.bgElements.length > 0) {
-        // Create 40 elements for a fuller background
-        for (let i = 0; i < 40; i++) {
-            const element = document.createElement('div');
-            element.className = 'bg-element';
-            element.textContent = location.bgElements[Math.floor(Math.random() * location.bgElements.length)];
-
-            // Random positioning across entire screen
-            element.style.left = Math.random() * 100 + '%';
-            element.style.top = Math.random() * 100 + '%';
-            element.style.animationDelay = (Math.random() * 15) + 's';
-            element.style.animationDuration = (10 + Math.random() * 25) + 's';
-
-            // More varied opacity - some more visible
-            element.style.opacity = 0.08 + Math.random() * 0.25;
-
-            // Much more varied sizes - from tiny to large
-            const sizeCategory = Math.random();
-            let fontSize;
-            if (sizeCategory < 0.3) {
-                fontSize = 1 + Math.random() * 1.5; // Small: 1-2.5rem
-            } else if (sizeCategory < 0.7) {
-                fontSize = 2.5 + Math.random() * 2; // Medium: 2.5-4.5rem
-            } else if (sizeCategory < 0.9) {
-                fontSize = 4.5 + Math.random() * 3; // Large: 4.5-7.5rem
-            } else {
-                fontSize = 7 + Math.random() * 5; // Extra large: 7-12rem
-            }
-            element.style.fontSize = fontSize + 'rem';
-
-            // Random rotation for variety
-            element.style.transform = `rotate(${Math.random() * 360}deg)`;
-
-            bgContainer.appendChild(element);
-        }
-    }
-
-    document.body.appendChild(bgContainer);
-}
-
-function showLocationsModal() {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-
-    const currentLoc = getCurrentLocation();
-    let locationsHTML = locations.map(location => {
-        const unlocked = gameState.unlockedLocations.includes(location.id);
-        const current = location.id === gameState.currentLocation;
-        const bonusPercent = Math.round((location.zombieBonus - 1) * 100);
-
-        return `
-            <div class="location-card ${unlocked ? 'unlocked' : 'locked'} ${current ? 'current' : ''}"
-                 data-location-id="${location.id}">
-                <div class="location-preview" style="background: ${location.background}">
-                    <span class="location-icon">${location.name.split(' ')[0]}</span>
-                </div>
-                <div class="location-info">
-                    <div class="location-card-name">${unlocked ? location.name : '🔒 ???'}</div>
-                    <div class="location-card-desc">${unlocked ? location.description : `Unlock at ${formatNumber(location.unlockKills)} kills`}</div>
-                    ${unlocked ? `<div class="location-card-bonus">+${bonusPercent}% Kill Bonus</div>` : ''}
-                    ${current ? '<div class="location-current-badge">CURRENT</div>' : ''}
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    overlay.innerHTML = `
-        <div class="modal-content locations-modal">
-            <h2>🗺️ Locations</h2>
-            <div class="current-location-info">
-                <span>Current Location:</span>
-                <span class="current-location-name">${currentLoc.name}</span>
-                <span class="current-location-bonus">+${Math.round((currentLoc.zombieBonus - 1) * 100)}% Kill Bonus</span>
-            </div>
-            <div class="locations-grid">
-                ${locationsHTML}
-            </div>
-            <button class="modal-close">Close</button>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // Add click handlers for locations
-    overlay.querySelectorAll('.location-card.unlocked:not(.current)').forEach(card => {
-        card.addEventListener('click', () => {
-            const locationId = card.getAttribute('data-location-id');
-            switchLocation(locationId);
-            overlay.remove();
-            showLocationsModal(); // Refresh
-        });
-    });
-
-    overlay.querySelector('.modal-close').addEventListener('click', () => {
-        overlay.classList.add('fade-out');
-        setTimeout(() => overlay.remove(), 300);
-    });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 300);
-        }
-    });
-}
-
-// ===== PARTICLE EFFECTS SYSTEM =====
-function createParticle(x, y, type = 'blood') {
-    if (!elements.particleContainer) return;
-
-    const particle = document.createElement('div');
-    particle.className = `particle particle-${type}`;
-
-    const offsetX = (Math.random() - 0.5) * 100;
-    const offsetY = (Math.random() - 0.5) * 50;
-
-    particle.style.left = (x + offsetX) + 'px';
-    particle.style.top = (y + offsetY) + 'px';
-
-    // Random particle properties
-    const size = Math.random() * 8 + 4;
-    particle.style.width = size + 'px';
-    particle.style.height = size + 'px';
-
-    elements.particleContainer.appendChild(particle);
-    setTimeout(() => particle.remove(), 1000);
-}
-
-function createParticleBurst(x, y, count = 5, type = 'blood') {
-    for (let i = 0; i < count; i++) {
-        setTimeout(() => createParticle(x, y, type), i * 30);
+    writeText('overdrive-label', active ? '3× power · ' + Math.ceil(remaining / 1000) + 's' :
+        ready ? 'Ready' : Math.floor(gameState.overdriveCharge / DRIVE_HITS * 100) + '%');
+    const button = document.getElementById('overdrive-btn');
+    if (button) {
+        button.disabled = active || !ready;
+        button.title = active ? 'Triple strike power is active' : ready ? 'Activate triple strike power (E)' : 'Land 20 strikes to charge Overdrive';
     }
 }
 
-function createScreenShake(intensity = 5) {
-    const gameContainer = document.querySelector('.game-container');
-    if (!gameContainer) return;
-
-    gameContainer.style.animation = 'none';
-    gameContainer.offsetHeight; // Trigger reflow
-    gameContainer.style.animation = `shake ${intensity * 0.05}s ease`;
-}
-
-// ===== BLOOD SPLATTER EFFECT =====
-function createBloodSplatter(x, y, intensity = 1) {
-    const splatterContainer = document.getElementById('particle-container');
-    if (!splatterContainer) return;
-
-    const splatCount = Math.floor(5 + intensity * 5);
-
-    for (let i = 0; i < splatCount; i++) {
-        const splat = document.createElement('div');
-        splat.className = 'blood-splat';
-
-        const angle = Math.random() * Math.PI * 2;
-        const distance = 20 + Math.random() * 80 * intensity;
-        const endX = Math.cos(angle) * distance;
-        const endY = Math.sin(angle) * distance;
-
-        splat.style.left = x + 'px';
-        splat.style.top = y + 'px';
-        splat.style.setProperty('--end-x', endX + 'px');
-        splat.style.setProperty('--end-y', endY + 'px');
-        splat.style.setProperty('--size', (5 + Math.random() * 10 * intensity) + 'px');
-
-        splatterContainer.appendChild(splat);
-        setTimeout(() => splat.remove(), 1000);
-    }
-}
-
-// ===== WEATHER EFFECTS SYSTEM =====
-let weatherInterval = null;
-
-function startWeatherEffects() {
-    const location = getCurrentLocation();
-    stopWeatherEffects();
-
-    // Remove existing weather container
-    const existingWeather = document.getElementById('weather-container');
-    if (existingWeather) existingWeather.remove();
-
-    // Create weather container
-    const weatherContainer = document.createElement('div');
-    weatherContainer.id = 'weather-container';
-    weatherContainer.className = 'weather-container';
-    document.body.appendChild(weatherContainer);
-
-    switch(location.weather) {
-        case 'rain':
-            startRain(weatherContainer);
-            break;
-        case 'fog':
-            startFog(weatherContainer);
-            break;
-        case 'dust':
-            startDust(weatherContainer);
-            break;
-        case 'storm':
-            startStorm(weatherContainer);
-            break;
-        case 'toxic':
-            startToxic(weatherContainer);
-            break;
-        case 'embers':
-            startEmbers(weatherContainer);
-            break;
-        case 'stars':
-            startStars(weatherContainer);
-            break;
-    }
-}
-
-function stopWeatherEffects() {
-    if (weatherInterval) {
-        clearInterval(weatherInterval);
-        weatherInterval = null;
-    }
-}
-
-function startRain(container) {
-    container.classList.add('weather-rain');
-    for (let i = 0; i < 100; i++) {
-        const drop = document.createElement('div');
-        drop.className = 'rain-drop';
-        drop.style.left = Math.random() * 100 + '%';
-        drop.style.animationDelay = Math.random() * 2 + 's';
-        drop.style.animationDuration = (0.5 + Math.random() * 0.5) + 's';
-        container.appendChild(drop);
-    }
-}
-
-function startFog(container) {
-    container.classList.add('weather-fog');
-    for (let i = 0; i < 5; i++) {
-        const fog = document.createElement('div');
-        fog.className = 'fog-layer';
-        fog.style.animationDelay = (i * 3) + 's';
-        fog.style.opacity = 0.1 + Math.random() * 0.1;
-        container.appendChild(fog);
-    }
-}
-
-function startDust(container) {
-    container.classList.add('weather-dust');
-    for (let i = 0; i < 50; i++) {
-        const dust = document.createElement('div');
-        dust.className = 'dust-particle';
-        dust.style.left = Math.random() * 100 + '%';
-        dust.style.top = Math.random() * 100 + '%';
-        dust.style.animationDelay = Math.random() * 5 + 's';
-        container.appendChild(dust);
-    }
-}
-
-function startStorm(container) {
-    container.classList.add('weather-storm');
-    // Rain
-    for (let i = 0; i < 150; i++) {
-        const drop = document.createElement('div');
-        drop.className = 'rain-drop heavy';
-        drop.style.left = Math.random() * 100 + '%';
-        drop.style.animationDelay = Math.random() * 1 + 's';
-        drop.style.animationDuration = (0.3 + Math.random() * 0.2) + 's';
-        container.appendChild(drop);
-    }
-    // Lightning
-    weatherInterval = setInterval(() => {
-        if (Math.random() < 0.3) {
-            triggerLightning(container);
-        }
-    }, 3000);
-}
-
-function triggerLightning(container) {
-    const flash = document.createElement('div');
-    flash.className = 'lightning-flash';
-    container.appendChild(flash);
-    SoundManager.playThunder();
-    setTimeout(() => flash.remove(), 200);
-}
-
-function startToxic(container) {
-    container.classList.add('weather-toxic');
-    for (let i = 0; i < 30; i++) {
-        const bubble = document.createElement('div');
-        bubble.className = 'toxic-bubble';
-        bubble.style.left = Math.random() * 100 + '%';
-        bubble.style.animationDelay = Math.random() * 5 + 's';
-        bubble.style.animationDuration = (3 + Math.random() * 4) + 's';
-        container.appendChild(bubble);
-    }
-}
-
-function startEmbers(container) {
-    container.classList.add('weather-embers');
-    for (let i = 0; i < 60; i++) {
-        const ember = document.createElement('div');
-        ember.className = 'ember';
-        ember.style.left = Math.random() * 100 + '%';
-        ember.style.animationDelay = Math.random() * 5 + 's';
-        ember.style.animationDuration = (2 + Math.random() * 3) + 's';
-        container.appendChild(ember);
-    }
-}
-
-function startStars(container) {
-    container.classList.add('weather-stars');
-    for (let i = 0; i < 80; i++) {
-        const star = document.createElement('div');
-        star.className = 'shooting-star';
-        star.style.left = Math.random() * 100 + '%';
-        star.style.top = Math.random() * 50 + '%';
-        star.style.animationDelay = Math.random() * 10 + 's';
-        star.style.animationDuration = (1 + Math.random() * 2) + 's';
-        container.appendChild(star);
-    }
-}
-
-// ===== DAY/NIGHT CYCLE =====
-function updateDayNightCycle() {
-    gameState.timeOfDay = (gameState.timeOfDay + 0.1) % 100;
-
-    const root = document.documentElement;
-    let brightness, overlay;
-
-    // 0-25: Dawn, 25-50: Day, 50-75: Dusk, 75-100: Night
-    if (gameState.timeOfDay < 25) {
-        // Dawn - getting lighter
-        brightness = 0.7 + (gameState.timeOfDay / 25) * 0.3;
-        overlay = `rgba(255, 200, 150, ${0.1 - (gameState.timeOfDay / 25) * 0.1})`;
-    } else if (gameState.timeOfDay < 50) {
-        // Day - bright
-        brightness = 1;
-        overlay = 'rgba(0, 0, 0, 0)';
-    } else if (gameState.timeOfDay < 75) {
-        // Dusk - getting darker
-        brightness = 1 - ((gameState.timeOfDay - 50) / 25) * 0.4;
-        overlay = `rgba(255, 100, 50, ${((gameState.timeOfDay - 50) / 25) * 0.15})`;
-    } else {
-        // Night - dark
-        brightness = 0.6;
-        overlay = `rgba(0, 0, 50, 0.2)`;
-    }
-
-    root.style.setProperty('--day-brightness', brightness);
-    root.style.setProperty('--day-overlay', overlay);
-}
-
-// ===== SCREEN EFFECTS (VIGNETTE & GLOW) =====
-function updateScreenEffects() {
-    const root = document.documentElement;
-
-    // Power level glow (based on kills per click)
-    const powerLevel = Math.min(gameState.killsPerClick / 1000, 1);
-    const glowIntensity = powerLevel * 20;
-    root.style.setProperty('--power-glow', `0 0 ${glowIntensity}px rgba(255, 215, 0, ${powerLevel * 0.3})`);
-
-    // Vignette intensity (stronger during bosses/waves)
-    let vignetteIntensity = 0.3;
-    if (gameState.bossActive) vignetteIntensity = 0.5;
-    if (gameState.waveActive) vignetteIntensity = 0.4;
-    root.style.setProperty('--vignette-intensity', vignetteIntensity);
-
-    // Combo glow
-    if (gameState.comboCount > 5) {
-        const comboGlow = Math.min(gameState.comboCount / 50, 1);
-        root.style.setProperty('--combo-glow', `0 0 ${comboGlow * 30}px rgba(255, 100, 0, ${comboGlow * 0.5})`);
-    } else {
-        root.style.setProperty('--combo-glow', 'none');
-    }
+function activateOverdrive() {
+    if (overdriveActive() || gameState.overdriveCharge < DRIVE_HITS) return;
+    gameState.overdriveCharge = 0;
+    gameState.overdriveUntil = Date.now() + DRIVE_DURATION;
+    SoundManager.playCombo();
+    updateDisplay();
+    saveGame();
 }
 
 // ===== COMBO SYSTEM =====
@@ -1203,13 +833,13 @@ function checkGoldenZombieSpawn() {
     }
 }
 
+let goldenExpiry;
 function spawnGoldenZombie() {
+    clearTimeout(goldenExpiry);
     gameState.goldenZombieActive = true;
+    updateTarget();
 
     elements.zombieTarget.classList.add('golden-zombie');
-    if (elements.zombieEmoji) {
-        elements.zombieEmoji.textContent = '👑';
-    }
 
     SoundManager.playGoldenZombie();
     showSideNotification({
@@ -1220,16 +850,17 @@ function spawnGoldenZombie() {
     });
 
     // Golden zombie only lasts 3 seconds
-    setTimeout(() => {
+    goldenExpiry = setTimeout(() => {
         if (gameState.goldenZombieActive) {
             gameState.goldenZombieActive = false;
             elements.zombieTarget.classList.remove('golden-zombie');
-            changeZombie();
+            updateTarget();
         }
     }, 3000);
 }
 
 function clickGoldenZombie() {
+    clearTimeout(goldenExpiry);
     gameState.goldenZombieActive = false;
     gameState.goldenZombiesClicked++;
 
@@ -1241,14 +872,6 @@ function clickGoldenZombie() {
     gameState.kills += bonus;
     gameState.totalKills += bonus;
 
-    // Big visual feedback
-    const rect = elements.zombieTarget.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-
-    createParticleBurst(x, y, 20, 'gold');
-    createScreenShake(15);
-
     showSideNotification({
         title: '💰 JACKPOT!',
         icon: '👑',
@@ -1258,8 +881,9 @@ function clickGoldenZombie() {
     });
 
     SoundManager.playGoldenZombie();
-    changeZombie();
+    updateTarget();
     checkAchievements();
+    return bonus;
 }
 
 // ===== DAILY REWARDS SYSTEM =====
@@ -1268,6 +892,11 @@ function checkDailyReward() {
     const lastReward = gameState.lastDailyReward || 0;
     const oneDayMs = 24 * 60 * 60 * 1000;
     const twoDaysMs = 2 * oneDayMs;
+
+    if (!lastReward) {
+        gameState.lastDailyReward = now;
+        return;
+    }
 
     if (now - lastReward >= oneDayMs) {
         // Check if streak continues or resets
@@ -1308,40 +937,37 @@ function giveDailyReward() {
 
 // ===== KEYBOARD SUPPORT =====
 function setupKeyboardControls() {
-    document.addEventListener('keydown', (e) => {
-        // Spacebar or Enter to click zombie
-        if (e.code === 'Space' || e.code === 'Enter') {
-            e.preventDefault();
-            simulateZombieClick();
+    document.addEventListener('keydown', event => {
+        if (event.defaultPrevented || event.repeat || event.ctrlKey || event.metaKey || event.altKey ||
+            event.target.closest('input, textarea, select, [contenteditable=true]')) return;
+        if (event.code === 'Escape') {
+            const modal = document.querySelector('.modal-overlay');
+            if (modal) modal.querySelector('.modal-close')?.click();
+            else if (sidePanelOpen) toggleSidePanel();
+            return;
         }
-
-        // M to toggle menu panel
-        if (e.code === 'KeyM') {
-            toggleSidePanel();
+        if (document.querySelector('.modal-overlay, dialog[open]')) return;
+        if (event.code === 'KeyM') toggleSidePanel();
+        if (event.code === 'KeyS') toggleSound();
+        if (sidePanelOpen) {
+            if (event.key === 'Tab') {
+                const buttons = [...elements.sidePanel.querySelectorAll('button:not(:disabled)')].filter(button => button.offsetWidth);
+                const first = buttons[0], last = buttons.at(-1);
+                if (event.shiftKey && document.activeElement === first || !event.shiftKey && document.activeElement === last) {
+                    event.preventDefault();
+                    (event.shiftKey ? last : first)?.focus();
+                }
+            }
+            const tab = ['locations', 'prestige', 'stats', 'achievements'][Number(event.key) - 1];
+            if (tab) switchTab(tab);
+            return;
         }
-
-        // S to toggle sound
-        if (e.code === 'KeyS' && !e.ctrlKey) {
-            toggleSound();
+        if (event.code === 'KeyE') activateOverdrive();
+        if ((event.code === 'Space' || event.code === 'Enter') && !event.target.closest('button,a,[role=button]')) {
+            event.preventDefault();
+            elements.zombieTarget.click();
         }
-
-        // Number keys 1-4 for tabs
-        if (e.code === 'Digit1') switchTab('locations');
-        if (e.code === 'Digit2') switchTab('prestige');
-        if (e.code === 'Digit3') switchTab('stats');
-        if (e.code === 'Digit4') switchTab('achievements');
     });
-}
-
-function simulateZombieClick() {
-    // Create a synthetic click event
-    const rect = elements.zombieTarget.getBoundingClientRect();
-    const event = {
-        clientX: rect.left + rect.width / 2,
-        clientY: rect.top + rect.height / 2
-    };
-
-    onZombieClick(event);
 }
 
 // ===== CRITICAL HIT SYSTEM =====
@@ -1358,7 +984,7 @@ function getCriticalDamage() {
 // ===== PRESTIGE-MODIFIED DAMAGE =====
 function getEffectiveClickPower() {
     const locationBonus = getLocationBonus();
-    return Math.floor(gameState.killsPerClick * gameState.prestigeBonuses.clickMultiplier * locationBonus);
+    return Math.floor(gameState.killsPerClick * gameState.prestigeBonuses.clickMultiplier * locationBonus * (overdriveActive() ? 3 : 1));
 }
 
 function getEffectiveAutoPower() {
@@ -1380,7 +1006,7 @@ function getBossForLevel() {
 }
 
 function spawnBoss() {
-    if (gameState.bossActive || gameState.waveActive) return;
+    if (gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive) return;
 
     const boss = getBossForLevel();
     gameState.bossActive = true;
@@ -1389,10 +1015,6 @@ function spawnBoss() {
     gameState.bossMaxHealth = boss.health;
     gameState.bossTimer = gameState.bossDuration + gameState.prestigeBonuses.eventTime;
 
-    // Update display
-    if (elements.zombieEmoji) {
-        elements.zombieEmoji.textContent = boss.emoji;
-    }
     elements.zombieTarget.classList.add('boss-active');
 
     SoundManager.playBossAppear();
@@ -1434,7 +1056,7 @@ function defeatBoss() {
     gameState.bossTimer = 0;
 
     elements.zombieTarget.classList.remove('boss-active');
-    changeZombie();
+    updateTarget();
     updateEventDisplay();
     checkAchievements();
 }
@@ -1449,7 +1071,7 @@ function bossFailed() {
     gameState.bossTimer = 0;
 
     elements.zombieTarget.classList.remove('boss-active');
-    changeZombie();
+    updateTarget();
     updateEventDisplay();
 }
 
@@ -1464,13 +1086,13 @@ function showBossVictory(boss, reward) {
 }
 
 // ===== ZOMBIE WAVE SYSTEM =====
-function startWave() {
-    if (gameState.waveActive || gameState.bossActive) return;
+function startWave(intro = false) {
+    if (gameState.waveActive || gameState.bossActive || gameState.goldenZombieActive) return;
 
     gameState.waveNumber++;
     gameState.waveActive = true;
     gameState.waveKills = 0;
-    gameState.waveTarget = Math.floor(50 * Math.pow(1.3, gameState.waveNumber - 1));
+    gameState.waveTarget = intro ? 18 : Math.floor(50 * Math.pow(1.3, gameState.waveNumber - 1));
     gameState.waveTimer = gameState.waveDuration + gameState.prestigeBonuses.eventTime;
 
     elements.zombieTarget.classList.add('wave-active');
@@ -1492,7 +1114,7 @@ function addWaveKill(kills) {
 }
 
 function completeWave() {
-    let bonus = Math.floor(gameState.waveTarget * gameState.waveMultiplier * 10);
+    let bonus = Math.floor(gameState.waveTarget * gameState.waveMultiplier * (gameState.waveTarget === 18 ? 2 : 10));
     // Apply prestige wave bonus
     bonus = Math.floor(bonus * gameState.prestigeBonuses.waveMultiplier);
     gameState.kills += bonus;
@@ -1538,6 +1160,7 @@ function showWaveComplete(waveNum, bonus) {
 
 // ===== EVENT DISPLAY UPDATE =====
 function updateEventDisplay() {
+    updateTarget();
     if (!elements.eventDisplay) return;
 
     if (gameState.bossActive) {
@@ -1575,6 +1198,10 @@ function updateEventDisplay() {
 
 // ===== EVENT TIMER TICK =====
 function eventTick() {
+    if (gameState.overdriveUntil) {
+        if (!overdriveActive()) gameState.overdriveUntil = 0;
+        updateDisplay();
+    }
     if (gameState.bossActive) {
         gameState.bossTimer--;
         if (gameState.bossTimer <= 0) {
@@ -1582,7 +1209,9 @@ function eventTick() {
         } else {
             // Boss takes auto damage
             if (gameState.killsPerSecond > 0) {
-                damageBoss(gameState.killsPerSecond);
+                damageBoss(getEffectiveAutoPower());
+                checkLocationUnlocks();
+                updateDisplay();
             }
             updateEventDisplay();
         }
@@ -1792,6 +1421,11 @@ function doPrestige() {
     gameState.wavesCompleted = 0;
     gameState.waveNumber = 0;
 
+    gameState.overdriveCharge = 0;
+    gameState.overdriveUntil = 0;
+    gameState.goldenZombieActive = false;
+    elements.zombieTarget.classList.remove('golden-zombie');
+
     // Reset active events
     gameState.bossActive = false;
     gameState.waveActive = false;
@@ -1818,135 +1452,6 @@ function showPrestigeComplete(points) {
     });
 }
 
-function showPrestigeModal() {
-    const potentialPoints = calculatePrestigePoints();
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-
-    // Build upgrade tree HTML
-    let upgradeTreeHTML = '';
-    for (let row = 1; row <= 4; row++) {
-        const rowUpgrades = prestigeUpgrades.filter(u => u.row === row);
-        const rowRequires = rowUpgrades[0]?.requires || 0;
-        const pointsSpent = getPrestigeUpgradePointsSpent(row);
-        const rowUnlocked = pointsSpent >= rowRequires;
-
-        upgradeTreeHTML += `
-            <div class="prestige-row ${rowUnlocked ? '' : 'locked'}">
-                <div class="prestige-row-header">
-                    <span>Tier ${row}</span>
-                    ${rowRequires > 0 ? `<span class="prestige-requires">(Requires ${rowRequires} points spent)</span>` : ''}
-                </div>
-                <div class="prestige-row-upgrades">
-        `;
-
-        rowUpgrades.forEach(upgrade => {
-            const level = gameState.prestigeUpgrades[upgrade.id] || 0;
-            const canBuy = canBuyPrestigeUpgrade(upgrade);
-            const maxed = level >= upgrade.maxLevel;
-
-            upgradeTreeHTML += `
-                <div class="prestige-upgrade ${maxed ? 'maxed' : ''} ${canBuy ? 'affordable' : ''}"
-                     data-upgrade-id="${upgrade.id}">
-                    <div class="prestige-upgrade-name">${upgrade.name}</div>
-                    <div class="prestige-upgrade-desc">${upgrade.description}</div>
-                    <div class="prestige-upgrade-level">${level}/${upgrade.maxLevel}</div>
-                    <div class="prestige-upgrade-cost">${maxed ? 'MAXED' : `⭐ ${upgrade.cost}`}</div>
-                </div>
-            `;
-        });
-
-        upgradeTreeHTML += `
-                </div>
-            </div>
-        `;
-    }
-
-    overlay.innerHTML = `
-        <div class="modal-content prestige-modal">
-            <h2>⭐ Prestige System</h2>
-
-            <div class="prestige-info">
-                <div class="prestige-stat">
-                    <span>Current Points:</span>
-                    <span class="prestige-value">⭐ ${gameState.prestigePoints}</span>
-                </div>
-                <div class="prestige-stat">
-                    <span>Prestige Count:</span>
-                    <span class="prestige-value">🔄 ${gameState.prestigeCount}</span>
-                </div>
-                <div class="prestige-stat">
-                    <span>Total Kills This Run:</span>
-                    <span class="prestige-value">💀 ${formatNumber(gameState.totalKills)}</span>
-                </div>
-                <div class="prestige-stat potential">
-                    <span>Points if you prestige now:</span>
-                    <span class="prestige-value">⭐ ${potentialPoints}</span>
-                </div>
-            </div>
-
-            <button class="prestige-btn ${potentialPoints > 0 ? 'available' : 'unavailable'}" id="do-prestige">
-                ${potentialPoints > 0 ? `🌟 Prestige for ${potentialPoints} Points!` : '🔒 Need 100K kills to prestige'}
-            </button>
-
-            <div class="prestige-bonuses">
-                <h3>🎖️ Current Bonuses</h3>
-                <div class="bonus-grid">
-                    <div class="bonus-item">Click Power: <span>+${Math.round((gameState.prestigeBonuses.clickMultiplier - 1) * 100)}%</span></div>
-                    <div class="bonus-item">Auto Power: <span>+${Math.round((gameState.prestigeBonuses.autoMultiplier - 1) * 100)}%</span></div>
-                    <div class="bonus-item">Crit Chance: <span>+${Math.round(gameState.prestigeBonuses.critChance * 100)}%</span></div>
-                    <div class="bonus-item">Crit Damage: <span>+${Math.round(gameState.prestigeBonuses.critMultiplier * 100)}%</span></div>
-                    <div class="bonus-item">Cost Reduction: <span>-${Math.round(gameState.prestigeBonuses.costReduction * 100)}%</span></div>
-                    <div class="bonus-item">Boss Damage: <span>+${Math.round((gameState.prestigeBonuses.bossMultiplier - 1) * 100)}%</span></div>
-                </div>
-            </div>
-
-            <h3>🌳 Upgrade Tree</h3>
-            <div class="prestige-tree">
-                ${upgradeTreeHTML}
-            </div>
-
-            <button class="modal-close">Close</button>
-        </div>
-    `;
-
-    document.body.appendChild(overlay);
-
-    // Add click handlers for prestige upgrades
-    overlay.querySelectorAll('.prestige-upgrade').forEach(el => {
-        el.addEventListener('click', () => {
-            const upgradeId = el.getAttribute('data-upgrade-id');
-            const upgrade = prestigeUpgrades.find(u => u.id === upgradeId);
-            if (upgrade && canBuyPrestigeUpgrade(upgrade)) {
-                buyPrestigeUpgrade(upgrade);
-                // Refresh the modal
-                overlay.remove();
-                showPrestigeModal();
-            }
-        });
-    });
-
-    // Prestige button
-    overlay.querySelector('#do-prestige').addEventListener('click', () => {
-        if (potentialPoints > 0) {
-            overlay.remove();
-            doPrestige();
-        }
-    });
-
-    overlay.querySelector('.modal-close').addEventListener('click', () => {
-        overlay.classList.add('fade-out');
-        setTimeout(() => overlay.remove(), 300);
-    });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 300);
-        }
-    });
-}
-
 // ===== ACHIEVEMENTS SYSTEM =====
 function checkAchievements() {
     achievements.forEach(achievement => {
@@ -1961,6 +1466,7 @@ function checkAchievements() {
 function showAchievementPopup(achievement) {
     const popup = document.createElement('div');
     popup.className = 'achievement-popup';
+    popup.setAttribute('role', 'status');
     popup.innerHTML = `
         <div class="achievement-icon">${achievement.icon}</div>
         <div class="achievement-info">
@@ -1968,123 +1474,9 @@ function showAchievementPopup(achievement) {
             <div class="achievement-name">${achievement.name}</div>
         </div>
     `;
-    document.body.appendChild(popup);
-
-    setTimeout(() => {
-        popup.classList.add('fade-out');
-        setTimeout(() => popup.remove(), 500);
-    }, 3000);
+    displayNotice(popup, 3000);
 }
 
-function showAchievementsModal() {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-
-    const unlockedCount = gameState.unlockedAchievements.length;
-    const totalCount = achievements.length;
-
-    let achievementsHTML = achievements.map(ach => {
-        const unlocked = gameState.unlockedAchievements.includes(ach.id);
-        return `
-            <div class="achievement-item ${unlocked ? 'unlocked' : 'locked'}">
-                <div class="achievement-item-icon">${unlocked ? ach.icon : '🔒'}</div>
-                <div class="achievement-item-details">
-                    <div class="achievement-item-name">${unlocked ? ach.name : '???'}</div>
-                    <div class="achievement-item-desc">${unlocked ? ach.description : 'Keep playing to unlock!'}</div>
-                </div>
-            </div>
-        `;
-    }).join('');
-
-    overlay.innerHTML = `
-        <div class="modal-content achievements-modal">
-            <h2>🏅 Achievements (${unlockedCount}/${totalCount})</h2>
-            <div class="achievements-progress">
-                <div class="achievements-bar" style="width: ${(unlockedCount/totalCount)*100}%"></div>
-            </div>
-            <div class="achievements-list">
-                ${achievementsHTML}
-            </div>
-            <button class="modal-close">Close</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('.modal-close').addEventListener('click', () => {
-        overlay.classList.add('fade-out');
-        setTimeout(() => overlay.remove(), 300);
-    });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 300);
-        }
-    });
-}
-
-// ===== STATISTICS MODAL =====
-function showStatsModal() {
-    const currentPlayTime = gameState.totalPlayTime + Math.floor((Date.now() - gameState.sessionStartTime) / 1000);
-    const avgKillsPerClick = gameState.totalClicks > 0 ? Math.floor(gameState.totalKills / gameState.totalClicks) : 0;
-    const critRate = gameState.totalClicks > 0 ? ((gameState.criticalHits / gameState.totalClicks) * 100).toFixed(1) : 0;
-
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.innerHTML = `
-        <div class="modal-content stats-modal">
-            <h2>📊 Statistics</h2>
-            <div class="stats-grid">
-                <div class="stats-category">
-                    <h3>💀 Kills</h3>
-                    <div class="stats-row"><span>Current Kills:</span><span>${formatNumber(gameState.kills)}</span></div>
-                    <div class="stats-row"><span>Total Kills:</span><span>${formatNumber(gameState.totalKills)}</span></div>
-                    <div class="stats-row"><span>Kills Per Click:</span><span>${formatNumber(gameState.killsPerClick)}</span></div>
-                    <div class="stats-row"><span>Kills Per Second:</span><span>${formatNumber(gameState.killsPerSecond)}</span></div>
-                </div>
-                <div class="stats-category">
-                    <h3>🖱️ Clicks</h3>
-                    <div class="stats-row"><span>Total Clicks:</span><span>${formatNumber(gameState.totalClicks)}</span></div>
-                    <div class="stats-row"><span>Critical Hits:</span><span>${formatNumber(gameState.criticalHits)}</span></div>
-                    <div class="stats-row"><span>Crit Rate:</span><span>${critRate}%</span></div>
-                    <div class="stats-row"><span>Avg Kills/Click:</span><span>${formatNumber(avgKillsPerClick)}</span></div>
-                </div>
-                <div class="stats-category">
-                    <h3>👹 Events</h3>
-                    <div class="stats-row"><span>Bosses Defeated:</span><span>${gameState.bossesDefeated}</span></div>
-                    <div class="stats-row"><span>Waves Completed:</span><span>${gameState.wavesCompleted}</span></div>
-                </div>
-                <div class="stats-category">
-                    <h3>⏱️ Time</h3>
-                    <div class="stats-row"><span>Total Play Time:</span><span>${formatTime(currentPlayTime)}</span></div>
-                    <div class="stats-row"><span>This Session:</span><span>${formatTime(Math.floor((Date.now() - gameState.sessionStartTime) / 1000))}</span></div>
-                </div>
-                <div class="stats-category">
-                    <h3>🏆 Records</h3>
-                    <div class="stats-row"><span>Best Kills/Click:</span><span>${formatNumber(gameState.highestKillsPerClick)}</span></div>
-                    <div class="stats-row"><span>Best Kills/Sec:</span><span>${formatNumber(gameState.highestKillsPerSecond)}</span></div>
-                    <div class="stats-row"><span>Achievements:</span><span>${gameState.unlockedAchievements.length}/${achievements.length}</span></div>
-                </div>
-            </div>
-            <button class="modal-close">Close</button>
-        </div>
-    `;
-    document.body.appendChild(overlay);
-
-    overlay.querySelector('.modal-close').addEventListener('click', () => {
-        overlay.classList.add('fade-out');
-        setTimeout(() => overlay.remove(), 300);
-    });
-
-    overlay.addEventListener('click', (e) => {
-        if (e.target === overlay) {
-            overlay.classList.add('fade-out');
-            setTimeout(() => overlay.remove(), 300);
-        }
-    });
-}
-
-// ===== MILESTONE SYSTEM =====
 function checkMilestones() {
     milestones.forEach(milestone => {
         if (gameState.totalKills >= milestone.kills &&
@@ -2109,8 +1501,8 @@ function showMilestone(milestone) {
 // ===== UI UPDATES =====
 function updateDisplay() {
     elements.killCount.textContent = formatNumber(gameState.kills);
-    elements.perClick.textContent = formatNumber(gameState.killsPerClick);
-    elements.perSecond.textContent = formatNumber(gameState.killsPerSecond);
+    elements.perClick.textContent = formatNumber(getEffectiveClickPower());
+    elements.perSecond.textContent = formatNumber(getEffectiveAutoPower());
     elements.totalKilled.textContent = formatNumber(gameState.totalKills);
 
     if (gameState.killsPerClick > gameState.highestKillsPerClick) {
@@ -2120,121 +1512,74 @@ function updateDisplay() {
         gameState.highestKillsPerSecond = gameState.killsPerSecond;
     }
 
+    updateSectorProgress();
+    updateOverdrive();
     renderUpgrades();
 }
 
-function createFloatingNumber(amount, x, y, isCritical = false, isBoss = false) {
-    const floatingNum = document.createElement('div');
-    let className = 'floating-number';
-    if (isCritical) className += ' critical';
-    if (isBoss) className += ' boss-damage';
-    floatingNum.className = className;
-
-    let prefix = '+';
-    if (isCritical) prefix = 'CRIT! +';
-    if (isBoss) prefix = '💥 -';
-
-    floatingNum.textContent = prefix + formatNumber(amount);
-
-    const offsetX = (Math.random() - 0.5) * 100;
-    floatingNum.style.left = (x + offsetX) + 'px';
-    floatingNum.style.top = y + 'px';
-
-    elements.floatingNumbers.appendChild(floatingNum);
-    setTimeout(() => floatingNum.remove(), 1000);
+function showImpact(event, amount, kind) {
+    const field = elements.floatingNumbers.getBoundingClientRect();
+    const rect = elements.zombieTarget.getBoundingClientRect();
+    const keyboard = event.detail === 0;
+    const x = (keyboard ? rect.left + rect.width * 0.56 : event.clientX) - field.left;
+    const y = (keyboard ? rect.top + rect.height * 0.48 : event.clientY) - field.top;
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const number = document.createElement('span');
+    number.className = 'floating-number ' + kind;
+    number.textContent = (kind === 'critical' ? 'CRIT +' : kind === 'boss-damage' ? '−' : '+') + formatNumber(amount);
+    number.style.left = Math.max(25, Math.min(field.width - 32, x)) + 'px';
+    number.style.top = Math.max(35, Math.min(field.height - 18, y)) + 'px';
+    elements.floatingNumbers.appendChild(number);
+    setTimeout(() => number.remove(), 850);
+    if (reduced) return;
+    const ring = document.createElement('i');
+    ring.className = 'impact-ring ' + kind;
+    ring.style.left = x + 'px';
+    ring.style.top = y + 'px';
+    elements.floatingNumbers.appendChild(ring);
+    setTimeout(() => ring.remove(), 400);
 }
 
-// ===== CLICK HANDLER =====
+let releaseHit;
 function onZombieClick(event) {
-    if (SoundManager.audioContext && SoundManager.audioContext.state === 'suspended') {
-        SoundManager.audioContext.resume();
-    }
-
-    // Check for golden zombie first
-    if (gameState.goldenZombieActive) {
-        clickGoldenZombie();
-        return;
-    }
-
-    // Update combo system
+    if (sidePanelOpen || document.querySelector('.modal-overlay, dialog[open]')) return;
+    if (SoundManager.enabled && !SoundManager.audioContext) SoundManager.init();
+    if (SoundManager.audioContext?.state === 'suspended') SoundManager.audioContext.resume().catch(() => {});
     updateCombo();
-
-    const isCritical = rollCritical();
-    let damage = isCritical ? getCriticalDamage() : getEffectiveClickPower();
-
-    // Apply combo multiplier
-    damage = Math.floor(damage * gameState.comboMultiplier);
-
-    // Wave multiplier
-    if (gameState.waveActive) {
-        damage = Math.floor(damage * gameState.waveMultiplier);
-    }
-
     gameState.totalClicks++;
-
-    // Get position for floating numbers
-    const rect = elements.zombieTarget.getBoundingClientRect();
-    const containerRect = elements.floatingNumbers.getBoundingClientRect();
-    const x = rect.left + rect.width / 2 - containerRect.left;
-    const y = rect.top - containerRect.top + 50;
-
-    if (gameState.bossActive) {
-        // Damage boss instead of getting kills
-        if (isCritical) {
-            gameState.criticalHits++;
-            SoundManager.playCritical();
-            elements.zombieTarget.classList.add('critical-hit');
-            setTimeout(() => elements.zombieTarget.classList.remove('critical-hit'), 300);
-        }
-
-        damageBoss(damage);
-        createFloatingNumber(damage, x, y, isCritical, true);
-        createBloodSplatter(x + containerRect.left, y + containerRect.top, isCritical ? 2 : 1);
+    if (!overdriveActive()) gameState.overdriveCharge = Math.min(DRIVE_HITS, gameState.overdriveCharge + 1);
+    const wasGolden = gameState.goldenZombieActive;
+    const wasBoss = gameState.bossActive;
+    const critical = !wasGolden && rollCritical();
+    let amount;
+    if (wasGolden) {
+        amount = clickGoldenZombie();
     } else {
-        // Normal gameplay
-        gameState.kills += damage;
-        gameState.totalKills += damage;
-
-        if (isCritical) {
+        const power = critical ? getCriticalDamage() : getEffectiveClickPower();
+        const damage = Math.floor(power * gameState.comboMultiplier * (gameState.waveActive ? gameState.waveMultiplier : 1));
+        if (critical) {
             gameState.criticalHits++;
             SoundManager.playCritical();
-            elements.zombieTarget.classList.add('critical-hit');
-            setTimeout(() => elements.zombieTarget.classList.remove('critical-hit'), 300);
-        } else {
-            SoundManager.playClick();
         }
-
-        createFloatingNumber(damage, x, y, isCritical);
-
-        // Blood splatter effect
-        createBloodSplatter(x + containerRect.left, y + containerRect.top, isCritical ? 2 : 0.5);
-
-        // Particle effects
-        if (isCritical) {
-            createParticleBurst(x, y, 10, 'blood');
-            createScreenShake(10);
+        if (wasBoss) {
+            amount = Math.floor(damage * gameState.prestigeBonuses.bossMultiplier);
+            damageBoss(damage);
         } else {
-            createParticleBurst(x, y, 3, 'blood');
-        }
-
-        // Wave kills
-        if (gameState.waveActive) {
+            amount = damage;
+            if (!critical) SoundManager.playClick();
+            gameState.kills += damage;
+            gameState.totalKills += damage;
             addWaveKill(damage);
         }
-
-        if (Math.random() < 0.2) {
-            changeZombie();
-        }
-
-        // Check for golden zombie spawn
-        checkGoldenZombieSpawn();
     }
-
+    showImpact(event, amount, wasGolden ? 'gold' : critical ? 'critical' : wasBoss ? 'boss-damage' : 'normal');
     elements.zombieTarget.classList.add('clicked');
-    setTimeout(() => elements.zombieTarget.classList.remove('clicked'), 150);
-
-    // Update screen effects based on power
-    updateScreenEffects();
+    elements.zombieTarget.classList.toggle('critical-hit', critical);
+    clearTimeout(releaseHit);
+    releaseHit = setTimeout(() => elements.zombieTarget.classList.remove('clicked', 'critical-hit'), 140);
+    if (gameState.totalClicks === 18 && !gameState.waveNumber) startWave(true);
+    else if (gameState.totalClicks === 65 && !gameState.bossesDefeated) spawnBoss();
+    else if (!wasGolden && !wasBoss) checkGoldenZombieSpawn();
 
     checkMilestones();
     checkAchievements();
@@ -2248,29 +1593,45 @@ function renderUpgrades() {
     renderUpgradeCategory(upgrades.survivors, elements.survivorUpgrades);
 }
 
-function renderUpgradeCategory(upgradeList, container) {
-    container.innerHTML = '';
+const equipmentIcons = {
+    fists: 'knuckles', baseball_bat: 'bat', machete: 'machete', chainsaw: 'chainsaw',
+    shotgun: 'shotgun', flamethrower: 'flame', minigun: 'minigun', nuke: 'rocket',
+    kid: 'civilian', survivor: 'veteran', militia: 'militia', sniper: 'hunter',
+    army: 'army', tank: 'tank', airforce: 'plane', satellite: 'satellite'
+};
 
-    upgradeList.forEach(upgrade => {
+function renderUpgradeCategory(upgradeList, container) {
+    upgradeList.forEach((upgrade, index) => {
+        let button = container.children[index];
+        const name = upgrade.name.slice(upgrade.name.indexOf(' ') + 1);
+        if (!button) {
+            button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'upgrade-btn';
+            button.dataset.upgradeId = upgrade.id;
+            button.innerHTML = '<span class="item-icon"><svg aria-hidden="true"><use href="#i-' +
+                equipmentIcons[upgrade.id] + '"></use></svg></span>' +
+                '<span class="item-copy"><span class="item-name">' + name + '</span>' +
+                '<span class="item-effect">' + upgrade.description + '</span></span>' +
+                '<span class="item-cost"><svg aria-hidden="true"><use href="#i-skull"></use></svg><span></span></span>' +
+                '<span class="item-owned" hidden></span>';
+            button.addEventListener('click', () => purchaseUpgrade(upgrade));
+            container.appendChild(button);
+        }
         const cost = getUpgradeCost(upgrade);
         const owned = gameState.upgrades[upgrade.id] || 0;
-        const canAfford = gameState.kills >= cost;
-
-        const btn = document.createElement('button');
-        btn.className = 'upgrade-btn' + (canAfford ? ' affordable' : '');
-        btn.disabled = !canAfford;
-
-        btn.innerHTML = `
-            <div class="upgrade-header">
-                <span class="upgrade-name">${upgrade.name}</span>
-                ${owned > 0 ? `<span class="upgrade-owned">${owned}</span>` : ''}
-            </div>
-            <div class="upgrade-effect">${upgrade.description}</div>
-            <div class="upgrade-cost">💀 ${formatNumber(cost)}</div>
-        `;
-
-        btn.addEventListener('click', () => purchaseUpgrade(upgrade));
-        container.appendChild(btn);
+        const affordable = gameState.kills >= cost;
+        button.disabled = !affordable;
+        button.classList.toggle('affordable', affordable);
+        if (button.dataset.cost === String(cost) && button.dataset.owned === String(owned)) return;
+        button.dataset.cost = cost;
+        button.dataset.owned = owned;
+        button.querySelector('.item-cost span').textContent = formatNumber(cost);
+        const badge = button.querySelector('.item-owned');
+        badge.hidden = !owned;
+        badge.textContent = '×' + owned;
+        button.setAttribute('aria-label', name + ', ' + upgrade.description + ', costs ' + cost +
+            ' kills, ' + owned + ' owned');
     });
 }
 
@@ -2319,6 +1680,8 @@ function saveGame() {
     const currentSessionTime = Math.floor((Date.now() - gameState.sessionStartTime) / 1000);
 
     const saveData = {
+        overdriveCharge: gameState.overdriveCharge,
+        overdriveUntil: gameState.overdriveUntil,
         kills: gameState.kills,
         totalKills: gameState.totalKills,
         killsPerClick: gameState.killsPerClick,
@@ -2354,15 +1717,23 @@ function saveGame() {
         savedAt: Date.now()
     };
 
-    localStorage.setItem('zombieClickerSave', JSON.stringify(saveData));
+    try {
+        localStorage.setItem('zombieClickerSave', JSON.stringify(saveData));
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 function loadGame() {
-    const saveData = localStorage.getItem('zombieClickerSave');
+    let saveData;
+    try { saveData = localStorage.getItem('zombieClickerSave'); } catch { return false; }
 
     if (saveData) {
         try {
             const data = JSON.parse(saveData);
+            gameState.overdriveCharge = Math.max(0, Math.min(DRIVE_HITS, Number(data.overdriveCharge) || 0));
+            gameState.overdriveUntil = Math.min(Date.now() + DRIVE_DURATION, Number(data.overdriveUntil) || 0);
             gameState.kills = data.kills || 0;
             gameState.totalKills = data.totalKills || 0;
             gameState.killsPerClick = data.killsPerClick || 1;
@@ -2407,7 +1778,7 @@ function loadGame() {
             updateSoundButton();
 
             if (data.savedAt && gameState.killsPerSecond > 0) {
-                const offlineSeconds = Math.min((Date.now() - data.savedAt) / 1000, 7200);
+                const offlineSeconds = Math.max(0, Math.min((Date.now() - data.savedAt) / 1000, 7200));
                 const offlineMultiplier = gameState.prestigeBonuses.offlineMultiplier;
                 const offlineEarnings = Math.floor(offlineSeconds * getEffectiveAutoPower() * offlineMultiplier);
                 if (offlineEarnings > 0) {
@@ -2425,45 +1796,31 @@ function loadGame() {
     return false;
 }
 
+const freshGame = JSON.stringify(gameState);
+
 function resetGame() {
-    if (confirm('Are you sure you want to reset? All progress will be lost!')) {
-        localStorage.removeItem('zombieClickerSave');
-
-        gameState.kills = 0;
-        gameState.totalKills = 0;
-        gameState.killsPerClick = 1;
-        gameState.killsPerSecond = 0;
-        gameState.upgrades = {};
-        gameState.unlockedMilestones = [];
-        gameState.unlockedAchievements = [];
-        gameState.totalClicks = 0;
-        gameState.criticalHits = 0;
-        gameState.totalUpgradesBought = 0;
-        gameState.totalPlayTime = 0;
-        gameState.sessionStartTime = Date.now();
-        gameState.highestKillsPerClick = 1;
-        gameState.highestKillsPerSecond = 0;
-        gameState.bossesDefeated = 0;
-        gameState.wavesCompleted = 0;
-        gameState.waveNumber = 0;
-        gameState.bossActive = false;
-        gameState.waveActive = false;
-
-        elements.zombieTarget.classList.remove('boss-active', 'wave-active');
-        initUpgrades();
-        updateDisplay();
-        updateEventDisplay();
-        showNotification('Game reset!');
-    }
+    if (!confirm('Reset the game? This erases your kills, upgrades and achievements.')) return;
+    clearTimeout(goldenExpiry);
+    const sound = gameState.soundEnabled;
+    Object.assign(gameState, JSON.parse(freshGame), { sessionStartTime: Date.now(), lastDailyReward: Date.now(), soundEnabled: sound });
+    elements.zombieTarget.classList.remove('boss-active', 'wave-active', 'golden-zombie', 'clicked', 'critical-hit');
+    initUpgrades();
+    calculatePrestigeBonuses();
+    applyLocationTheme();
+    updateEventDisplay();
+    updateComboDisplay();
+    if (sidePanelOpen) updateTabContent(currentTab);
+    saveGame();
+    showNotification('Game reset');
 }
 
 // ===== NOTIFICATIONS =====
 function showNotification(message) {
     const notification = document.createElement('div');
     notification.className = 'save-notification';
+    notification.setAttribute('role', 'status');
     notification.textContent = message;
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 2500);
+    displayNotice(notification, 2500);
 }
 
 // Non-blocking side notification system
@@ -2472,9 +1829,10 @@ function showSideNotification(options) {
 
     const notification = document.createElement('div');
     notification.className = `side-notification side-notification-${type}`;
+    notification.setAttribute('role', 'status');
 
     let html = `
-        <div class="side-notification-icon">${icon}</div>
+        <div class="side-notification-icon" aria-hidden="true">${icon}</div>
         <div class="side-notification-content">
             <div class="side-notification-title">${title}</div>
             <div class="side-notification-message">${message}</div>
@@ -2491,47 +1849,42 @@ function showSideNotification(options) {
     html += `</div>`;
     notification.innerHTML = html;
 
-    // Stack notifications - find existing ones and offset
-    const existingNotifications = document.querySelectorAll('.side-notification');
-    let offset = 20;
-    existingNotifications.forEach(existing => {
-        offset += existing.offsetHeight + 10;
-    });
-    notification.style.top = offset + 'px';
-
-    document.body.appendChild(notification);
-
-    // Auto-remove after delay
-    setTimeout(() => {
-        notification.classList.add('slide-out');
-        setTimeout(() => {
-            notification.remove();
-            // Reposition remaining notifications
-            repositionSideNotifications();
-        }, 500);
-    }, 4000);
+    displayNotice(notification, 4000);
 }
 
-function repositionSideNotifications() {
-    const notifications = document.querySelectorAll('.side-notification');
-    let offset = 20;
-    notifications.forEach(notification => {
-        notification.style.top = offset + 'px';
-        offset += notification.offsetHeight + 10;
-    });
+function displayNotice(notice, duration) {
+    let stack = document.querySelector('.notice-stack');
+    if (!stack) {
+        stack = document.createElement('div');
+        stack.className = 'notice-stack';
+        document.body.appendChild(stack);
+    }
+    if (stack.childElementCount >= 3) stack.firstElementChild.remove();
+    stack.appendChild(notice);
+    setTimeout(() => notice.remove(), duration);
 }
 
 // ===== SIDE PANEL SYSTEM =====
 let sidePanelOpen = false;
-let currentTab = 'locations';
+let currentTab = 'stats';
+let drawerOpener = null;
 
 function toggleSidePanel() {
     sidePanelOpen = !sidePanelOpen;
-    if (elements.sidePanel) {
-        elements.sidePanel.classList.toggle('open', sidePanelOpen);
-    }
+    const panel = elements.sidePanel;
+    if (!panel) return;
+    if (sidePanelOpen) drawerOpener = document.activeElement;
+    panel.setAttribute('role', 'dialog');
+    panel.setAttribute('aria-modal', String(sidePanelOpen));
+    panel.classList.toggle('open', sidePanelOpen);
+    panel.inert = !sidePanelOpen;
+    panel.setAttribute('aria-hidden', String(!sidePanelOpen));
+    elements.togglePanelBtn?.setAttribute('aria-expanded', String(sidePanelOpen));
     if (sidePanelOpen) {
-        updateTabContent(currentTab);
+        switchTab(currentTab);
+        (document.getElementById('close-panel') || panel.querySelector('.tab-btn.active'))?.focus();
+    } else {
+        (drawerOpener?.matches('button, a') ? drawerOpener : elements.togglePanelBtn)?.focus();
     }
 }
 
@@ -2541,6 +1894,7 @@ function switchTab(tabName) {
     // Update tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.tab === tabName);
+        btn.setAttribute('aria-pressed', String(btn.dataset.tab === tabName));
     });
 
     // Update tab content
@@ -2574,10 +1928,10 @@ function renderLocationsTab() {
 
     const currentLoc = getCurrentLocation();
     let html = `
-        <h3>🗺️ Locations</h3>
+        <h3>Active sector</h3>
         <div class="panel-current-info">
             <span>Current:</span>
-            <span class="highlight">${currentLoc.name}</span>
+            <span class="highlight">${locationLabel(currentLoc)}</span>
             <span class="bonus">+${Math.round((currentLoc.zombieBonus - 1) * 100)}% Bonus</span>
         </div>
         <div class="panel-locations-grid">
@@ -2589,14 +1943,14 @@ function renderLocationsTab() {
         const bonusPercent = Math.round((location.zombieBonus - 1) * 100);
 
         html += `
-            <div class="panel-location-card ${unlocked ? 'unlocked' : 'locked'} ${current ? 'current' : ''}"
+            <button type="button" ${unlocked && !current ? '' : 'disabled'} class="panel-location-card ${unlocked ? 'unlocked' : 'locked'} ${current ? 'current' : ''}"
                  data-location-id="${location.id}">
-                <div class="panel-location-icon">${location.name.split(' ')[0]}</div>
-                <div class="panel-location-name">${unlocked ? location.name.replace(/^[^\s]+\s/, '') : '???'}</div>
-                ${unlocked ? `<div class="panel-location-bonus">+${bonusPercent}%</div>` :
-                           `<div class="panel-location-locked">${formatNumber(location.unlockKills)}</div>`}
-                ${current ? '<div class="panel-current-badge">✓</div>' : ''}
-            </div>
+                <span class="panel-location-icon">${String(locations.indexOf(location) + 1).padStart(2, '0')}</span>
+                <span class="panel-location-name">${locationLabel(location)}</span>
+                ${unlocked ? `<span class="panel-location-bonus">+${bonusPercent}%</span>` :
+                           `<span class="panel-location-locked">${formatNumber(location.unlockKills)} kills</span>`}
+                ${current ? '<span class="panel-current-badge">✓</span>' : ''}
+            </button>
         `;
     });
 
@@ -2619,15 +1973,15 @@ function renderPrestigeTab() {
     const potentialPoints = calculatePrestigePoints();
 
     let html = `
-        <h3>⭐ Prestige</h3>
+        <h3>Prestige</h3>
         <div class="panel-prestige-info">
             <div class="prestige-stat-row">
                 <span>Points:</span>
-                <span class="highlight">⭐ ${gameState.prestigePoints}</span>
+                <span class="highlight">${gameState.prestigePoints}</span>
             </div>
             <div class="prestige-stat-row">
                 <span>Prestige Count:</span>
-                <span class="highlight">🔄 ${gameState.prestigeCount}</span>
+                <span class="highlight">${gameState.prestigeCount}</span>
             </div>
             <div class="prestige-stat-row">
                 <span>Total Kills:</span>
@@ -2635,11 +1989,11 @@ function renderPrestigeTab() {
             </div>
             <div class="prestige-stat-row potential">
                 <span>If prestige now:</span>
-                <span class="highlight">⭐ ${potentialPoints}</span>
+                <span class="highlight">${potentialPoints}</span>
             </div>
         </div>
-        <button class="panel-prestige-btn ${potentialPoints > 0 ? 'available' : ''}" id="panel-do-prestige">
-            ${potentialPoints > 0 ? `🌟 Prestige (${potentialPoints} pts)` : '🔒 Need 100K kills'}
+        <button class="panel-prestige-btn ${potentialPoints > 0 ? 'available' : ''}" id="panel-do-prestige" ${potentialPoints > 0 ? '' : 'disabled'}>
+            ${potentialPoints > 0 ? `Prestige (${potentialPoints} pts)` : 'Unlock at 100k kills'}
         </button>
         <h4>Bonuses</h4>
         <div class="panel-bonus-grid">
@@ -2652,7 +2006,7 @@ function renderPrestigeTab() {
         <div class="panel-upgrade-tree">
     `;
 
-    for (let row = 1; row <= 4; row++) {
+    for (let row = 1; row <= Math.max(...prestigeUpgrades.map(upgrade => upgrade.row)); row++) {
         const rowUpgrades = prestigeUpgrades.filter(u => u.row === row);
         const rowRequires = rowUpgrades[0]?.requires || 0;
         const pointsSpent = getPrestigeUpgradePointsSpent(row);
@@ -2666,11 +2020,11 @@ function renderPrestigeTab() {
             const maxed = level >= upgrade.maxLevel;
 
             html += `
-                <div class="panel-upgrade ${maxed ? 'maxed' : ''} ${canBuy ? 'affordable' : ''}"
+                <button type="button" ${canBuy ? '' : 'disabled'} class="panel-upgrade ${maxed ? 'maxed' : ''} ${canBuy ? 'affordable' : ''}"
                      data-upgrade-id="${upgrade.id}" title="${upgrade.description}">
-                    <div class="panel-upgrade-icon">${upgrade.name.split(' ')[0]}</div>
-                    <div class="panel-upgrade-level">${level}/${upgrade.maxLevel}</div>
-                </div>
+                    <span class="panel-upgrade-icon">${upgrade.name.substring(upgrade.name.indexOf(' ') + 1)}</span>
+                    <small class="panel-upgrade-level">${level}/${upgrade.maxLevel} · ${upgrade.cost} pt</small>
+                </button>
             `;
         });
 
@@ -2708,10 +2062,10 @@ function renderStatsTab() {
     const critRate = gameState.totalClicks > 0 ? ((gameState.criticalHits / gameState.totalClicks) * 100).toFixed(1) : 0;
 
     container.innerHTML = `
-        <h3>📊 Statistics</h3>
+        <h3>Statistics</h3>
         <div class="panel-stats-grid">
             <div class="panel-stat-section">
-                <h4>💀 Kills</h4>
+                <h4>Kills</h4>
                 <div class="panel-stat-row"><span>Current:</span><span>${formatNumber(gameState.kills)}</span></div>
                 <div class="panel-stat-row"><span>Total:</span><span>${formatNumber(gameState.totalKills)}</span></div>
                 <div class="panel-stat-row"><span>Lifetime:</span><span>${formatNumber(gameState.lifetimeKills + gameState.totalKills)}</span></div>
@@ -2719,18 +2073,18 @@ function renderStatsTab() {
                 <div class="panel-stat-row"><span>Per Second:</span><span>${formatNumber(gameState.killsPerSecond)}</span></div>
             </div>
             <div class="panel-stat-section">
-                <h4>🖱️ Clicks</h4>
+                <h4>Strikes</h4>
                 <div class="panel-stat-row"><span>Total:</span><span>${formatNumber(gameState.totalClicks)}</span></div>
                 <div class="panel-stat-row"><span>Criticals:</span><span>${formatNumber(gameState.criticalHits)}</span></div>
                 <div class="panel-stat-row"><span>Crit Rate:</span><span>${critRate}%</span></div>
             </div>
             <div class="panel-stat-section">
-                <h4>👹 Events</h4>
+                <h4>Encounters</h4>
                 <div class="panel-stat-row"><span>Bosses:</span><span>${gameState.bossesDefeated}</span></div>
                 <div class="panel-stat-row"><span>Waves:</span><span>${gameState.wavesCompleted}</span></div>
             </div>
             <div class="panel-stat-section">
-                <h4>⏱️ Time</h4>
+                <h4>Time</h4>
                 <div class="panel-stat-row"><span>Total:</span><span>${formatTime(currentPlayTime)}</span></div>
             </div>
         </div>
@@ -2745,7 +2099,7 @@ function renderAchievementsTab() {
     const totalCount = achievements.length;
 
     let html = `
-        <h3>🏅 Achievements</h3>
+        <h3>Achievements</h3>
         <div class="panel-achievements-progress">
             <div class="progress-bar">
                 <div class="progress-fill" style="width: ${(unlockedCount/totalCount)*100}%"></div>
@@ -2758,9 +2112,9 @@ function renderAchievementsTab() {
     achievements.forEach(ach => {
         const unlocked = gameState.unlockedAchievements.includes(ach.id);
         html += `
-            <div class="panel-achievement ${unlocked ? 'unlocked' : 'locked'}" title="${unlocked ? ach.description : 'Keep playing!'}">
-                <span class="panel-achievement-icon">${unlocked ? ach.icon : '🔒'}</span>
-                <span class="panel-achievement-name">${unlocked ? ach.name : '???'}</span>
+            <div class="panel-achievement ${unlocked ? 'unlocked' : 'locked'}" title="${ach.description}" aria-label="${ach.name}, ${unlocked ? 'earned' : 'locked'}">
+                <span class="panel-achievement-icon" aria-hidden="true">${unlocked ? '✓' : '◇'}</span>
+                <span class="panel-achievement-name">${ach.name}</span>
             </div>
         `;
     });
@@ -2769,86 +2123,24 @@ function renderAchievementsTab() {
     container.innerHTML = html;
 }
 
-// ===== MOVING TARGET SYSTEM =====
-let targetMoveInterval = null;
-let targetMorphInterval = null;
-
-function startTargetMovement() {
-    // Move target every 8-15 seconds
-    targetMoveInterval = setInterval(() => {
-        if (!gameState.bossActive && !gameState.waveActive) {
-            moveTarget();
-        }
-    }, 8000 + Math.random() * 7000);
-
-    // Morph target every 12-20 seconds
-    targetMorphInterval = setInterval(() => {
-        if (!gameState.bossActive && !gameState.waveActive) {
-            morphTarget();
-        }
-    }, 12000 + Math.random() * 8000);
-}
-
-function moveTarget() {
-    const target = elements.zombieTarget;
-    if (!target) return;
-
-    // Random position within click section bounds
-    const maxX = 30; // percentage offset
-    const maxY = 20;
-
-    const offsetX = (Math.random() - 0.5) * maxX * 2;
-    const offsetY = (Math.random() - 0.5) * maxY * 2;
-
-    target.style.transition = 'transform 1s ease-in-out';
-    target.style.transform = `translate(${offsetX}%, ${offsetY}%)`;
-
-    // Reset after a while
-    setTimeout(() => {
-        if (Math.random() < 0.3) {
-            target.style.transform = 'translate(0, 0)';
-        }
-    }, 5000);
-}
-
-function morphTarget() {
-    const target = elements.zombieTarget;
-    if (!target) return;
-
-    // Random size change
-    const sizeMultiplier = 0.7 + Math.random() * 0.6; // 0.7x to 1.3x
-
-    // Random shape (border-radius)
-    const shapes = [
-        '50%', // Circle
-        '40%', // Rounded
-        '30% 70% 70% 30% / 30% 30% 70% 70%', // Blob 1
-        '60% 40% 30% 70% / 60% 30% 70% 40%', // Blob 2
-        '40% 60% 60% 40% / 70% 30% 30% 70%', // Blob 3
-    ];
-    const shape = shapes[Math.floor(Math.random() * shapes.length)];
-
-    target.style.transition = 'width 1.5s ease, height 1.5s ease, border-radius 1.5s ease';
-    target.style.width = `${180 * sizeMultiplier}px`;
-    target.style.height = `${180 * sizeMultiplier}px`;
-    target.style.borderRadius = shape;
-
-    // Emit a visual pulse when morphing
-    target.classList.add('morphing');
-    setTimeout(() => target.classList.remove('morphing'), 500);
-}
-
 function onSaveClick() {
-    saveGame();
+    if (!saveGame()) { showNotification('Saving unavailable in this browser'); return; }
     SoundManager.playPurchase();
     showNotification('Game saved!');
 }
 
 // ===== SOUND TOGGLE =====
 function updateSoundButton() {
-    if (elements.soundBtn) {
-        elements.soundBtn.textContent = gameState.soundEnabled ? '🔊 Sound' : '🔇 Muted';
-    }
+    const button = elements.soundBtn;
+    if (!button) return;
+    const enabled = gameState.soundEnabled;
+    button.setAttribute('aria-pressed', String(enabled));
+    button.setAttribute('aria-label', enabled ? 'Mute sound' : 'Enable sound');
+    button.title = enabled ? 'Mute sound (S)' : 'Enable sound (S)';
+    const icon = button.querySelector('use');
+    if (icon) icon.setAttribute('href', enabled ? '#i-sound' : '#i-muted');
+    const label = button.querySelector('[data-sound-label]');
+    if (label) label.textContent = enabled ? 'Sound on' : 'Sound off';
 }
 
 function toggleSound() {
@@ -2859,82 +2151,33 @@ function toggleSound() {
 
 // ===== INITIALIZATION =====
 function init() {
-    // Log version info to console
     logVersion();
-
-    SoundManager.init();
-    elements.zombieEmoji = document.querySelector('.zombie-emoji');
-    elements.eventDisplay = document.getElementById('event-display');
-    elements.particleContainer = document.getElementById('particle-container');
-    elements.locationName = document.getElementById('location-name');
-
-    initUpgrades();
     loadGame();
-
-    // Show version in UI
+    initUpgrades();
+    calculatePrestigeBonuses();
+    SoundManager.enabled = gameState.soundEnabled;
+    updateSoundButton();
     showVersionInUI();
-    applyLocationTheme();
-    updateDisplay();
-    changeZombie();
-
-    // Start weather effects for current location
-    startWeatherEffects();
-
-    // Check daily reward on load
     checkDailyReward();
-
-    // Setup keyboard controls
+    checkLocationUnlocks();
+    applyLocationTheme();
     setupKeyboardControls();
-
-    // Initialize screen effects
-    updateScreenEffects();
 
     elements.zombieTarget.addEventListener('click', onZombieClick);
     elements.saveBtn.addEventListener('click', onSaveClick);
     elements.resetBtn.addEventListener('click', resetGame);
-
-    if (elements.soundBtn) {
-        elements.soundBtn.addEventListener('click', toggleSound);
-    }
-
-    // Side panel toggle
-    if (elements.togglePanelBtn) {
-        elements.togglePanelBtn.addEventListener('click', toggleSidePanel);
-    }
-
-    // Tab switching
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => switchTab(btn.dataset.tab));
-    });
-
-    // Initialize side panel content
+    elements.soundBtn?.addEventListener('click', toggleSound);
+    elements.togglePanelBtn?.addEventListener('click', toggleSidePanel);
+    document.getElementById('overdrive-btn')?.addEventListener('click', activateOverdrive);
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.addEventListener('click', () => switchTab(btn.dataset.tab)));
     renderLocationsTab();
-
-    // Start moving target system
-    startTargetMovement();
-
-    // Timers
     setInterval(saveGame, 30000);
     setInterval(autoKillTick, 1000);
     setInterval(eventTick, 1000);
-
-    // Update side panel if open (live stats)
-    setInterval(() => {
-        if (sidePanelOpen) {
-            updateTabContent(currentTab);
-        }
-    }, 1000);
-
-    // Day/night cycle (updates every 2 seconds)
-    setInterval(updateDayNightCycle, 2000);
-
-    // Combo decay check
+    setInterval(() => { if (sidePanelOpen && currentTab === 'stats') renderStatsTab(); }, 1000);
     setInterval(decayCombo, 100);
-
-    // Screen effects update
-    setInterval(updateScreenEffects, 500);
-
-    window.addEventListener('beforeunload', saveGame);
+    document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+    window.addEventListener('pagehide', saveGame);
 }
 
 // Start the game!

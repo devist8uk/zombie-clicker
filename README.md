@@ -1,75 +1,31 @@
-# Zombie Apocalypse Survivor 🧟
+# Dead Frequency
 
-A zombie-themed clicker/idle game built with HTML, CSS, and JavaScript.
+Dead Frequency is the second edition of **Zombie Apocalypse Survivor**, a browser clicker set across seven illustrated outbreak zones. Open `index.html` to play locally, or [play the published game on GitHub Pages](https://devist8uk.github.io/zombie-clicker/). The game runs offline from a local copy. Its illustrations, equipment patches and fonts are bundled in `assets/`.
 
-## How to Play
+## Playing
 
-1. **Open the game**: Double-click `index.html` to open in your web browser
-2. **Click the zombie** to kill zombies and earn points
-3. **Buy upgrades** in the shop to increase your killing power
-4. **Watch your empire grow** as survivors automatically kill zombies for you
+Strike the infected to earn kills. Spend your kill balance in the Armory. Weapons increase each strike and survivors earn kills every second. Your total kills continue to count towards unlocking sectors after you spend them.
 
-## Game Features
+Land 20 strikes to charge Overdrive. Activate it for eight seconds of triple strike power, or hold the charge for a wave or boss. Rapid strikes build a combo, and the rare golden infected gives a brief opportunity for a bonus. Open the sector map to inspect a location or travel to an unlocked one for a higher multiplier.
 
-### Core Mechanics
-- **Click to Kill**: Each click eliminates zombies based on your click power
-- **Idle Earnings**: Survivors automatically kill zombies every second
-- **Upgrade System**: Purchase weapons and recruit survivors to boost your power
-- **Auto-Save**: Progress saves automatically every 30 seconds
-- **Offline Progress**: Earn kills while away (up to 1 hour)
+After 100,000 total kills in a run, the Field log offers prestige. This starts another run with persistent bonuses. Settings contains the manual save and reset controls.
 
-### Upgrades
+| Control | Action |
+| --- | --- |
+| Click or tap the battlefield | Strike |
+| Space or Enter | Strike from the battlefield, or activate the focused control |
+| E | Activate a charged Overdrive |
+| S | Toggle sound |
+| M | Open or close the Field log |
+| 1–4 | Select a Field log tab while the log is open |
+| Escape | Close the open log or dialog |
 
-#### Weapons (Increase Click Power)
-| Weapon | Base Cost | Effect |
-|--------|-----------|--------|
-| Baseball Bat | 15 | +1 per click |
-| Machete | 75 | +5 per click |
-| Shotgun | 300 | +25 per click |
-| Flamethrower | 1500 | +100 per click |
+## Saves and hosting
 
-#### Survivors (Automatic Kills)
-| Unit | Base Cost | Effect |
-|------|-----------|--------|
-| Survivor | 50 | +1 per second |
-| Militia Squad | 250 | +5 per second |
-| Army Unit | 1000 | +20 per second |
-| Tank Division | 5000 | +100 per second |
+The game writes to the original `zombieClickerSave` local-storage key and can resume saves from version 1. Returning survivors can earn up to two hours of offline progress. Saves belong to the browser profile and origin that created them, so a local copy and the published game have separate progress.
 
-*Note: Upgrade costs increase by 15% with each purchase*
-
-## Technical Details
-
-### File Structure
-```
-zombie-clicker/
-├── index.html    # Main game page
-├── style.css     # Styling and animations
-├── game.js       # Game logic and state management
-└── README.md     # This file
-```
-
-### Technologies Used
-- **HTML5**: Game structure and layout
-- **CSS3**: Styling, animations, and responsive design
-- **JavaScript (ES6)**: Game logic, state management, localStorage
-
-### Key Programming Concepts
-- DOM manipulation
-- Event handling (click events)
-- setInterval for game loops
-- localStorage for persistent data
-- CSS animations and transitions
-- Responsive grid layout
-
-## Browser Compatibility
-- Google Chrome (recommended)
-- Mozilla Firefox
-- Microsoft Edge
-- Safari
+The site uses HTML, CSS and vanilla JavaScript. No install or build step is required. GitHub Pages serves the repository root on `master`.
 
 ## Credits
-Created as a college project demonstrating web development fundamentals.
 
----
-*Survive the apocalypse, one click at a time!* 🧟‍♂️
+Based on the original Zombie Apocalypse Survivor college project. The Dead Frequency edition includes original generated illustrations, synthesized audio, and self-hosted Barlow Condensed. The font license is included in [assets/fonts/BarlowCondensed-OFL.txt](assets/fonts/BarlowCondensed-OFL.txt).
