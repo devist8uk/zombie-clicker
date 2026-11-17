@@ -18,6 +18,9 @@
     <link rel="stylesheet" href="attendant.css" />
     <link rel="stylesheet" href="combat-motion.css" />
     <link rel="stylesheet" href="rex-entrance.css" />
+    <link rel="stylesheet" href="patient-zero.css" />
+    <link rel="stylesheet" href="ward-cinema.css" />
+    <link rel="stylesheet" href="ward-preview.css" />
   </head>
   <body data-location="suburbs">
     <svg width="0" height="0" aria-hidden="true" class="symbols">
@@ -450,13 +453,37 @@
         <p id="detail-note"></p>
         <button id="travel-btn">Enter sector</button>
         <button id="watch-rex" hidden>Replay Rex sighting</button>
+        <button id="watch-ward" hidden>Preview Ward Seven</button>
       </div>
     </dialog>
-    <script src="game.js?v=2.1.0"></script>
-    <script src="interface.js?v=2.1.0"></script>
+    <dialog id="ward-preview" aria-labelledby="ward-preview-title" aria-describedby="ward-preview-status">
+      <header class="ward-preview-head">
+        <div>
+          <p>Overrun Hospital · Encounter preview</p>
+          <h2 id="ward-preview-title">Ward Seven</h2>
+        </div>
+        <form method="dialog">
+          <button class="icon-button" aria-label="Close ward preview">
+            <svg class="icon" aria-hidden="true"><use href="#i-close"></use></svg>
+          </button>
+        </form>
+      </header>
+      <button type="button" id="ward-preview-field" data-preview-sector="hospital" aria-label="Strike Patient Zero">
+        <span class="scene-art"></span><span class="scene-shade"></span>
+        <span class="ward-id-band" aria-hidden="true"><i></i>Bed 07 <b>Patient Zero</b></span>
+      </button>
+      <p id="ward-preview-status" role="status">Strike Patient Zero to wake the ward.</p>
+    </dialog>
+    <span class="station-sr" id="ward-live-status" role="status"></span>
+    <script src="ward-call.js"></script>
+    <script src="game.js?v=2.2.0"></script>
+    <script src="interface.js?v=2.2.0"></script>
     <script src="encounter-fx.js"></script>
     <script src="attendant.js"></script>
     <script src="combat-motion.js"></script>
-    <script src="rex-entrance.js"></script>
+    <script src="rex-entrance.js?v=2.2.0"></script>
+    <script src="patient-zero.js"></script>
+    <script src="ward-cinema.js"></script>
+    <script src="ward-preview.js"></script>
   </body>
 </html>

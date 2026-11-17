@@ -12,6 +12,8 @@ In the petrol station, the Attendant tracks your aim and reacts to hits. Buy the
 
 Camera shake can be switched off in Settings. The game also follows your device’s reduced-motion preference. The short Higgsfield Rex film loads when the warning begins, with an illustrated fallback.
 
+In the Overrun Hospital, Patient Zero follows your aim. After seven ordinary strikes, Ward Seven rings. Strike again within five seconds to answer the call and earn a bonus worth seven times your current strike power. The bell can ring again after 42 more ordinary strikes. Open the hospital sector card and select **Preview Ward Seven** to try the encounter at any level, or [go directly to the ward preview](https://devist8uk.github.io/zombie-clicker/#ward-seven).
+
 After 100,000 total kills in a run, the Field log offers prestige. This starts another run with persistent bonuses. Settings contains the manual save and reset controls.
 
 | Control | Action |

@@ -3,7 +3,7 @@
 // ===== VERSION SYSTEM =====
 const VERSION = {
     major: 2,
-    minor: 1,
+    minor: 2,
     patch: 0,
     build: '2026.11.17',
     get string() {
@@ -15,6 +15,7 @@ const VERSION = {
 };
 
 const CHANGELOG = [
+    { version: '2.2.0', date: '2026-11-17', changes: ['Patient Zero breathes, tracks your aim and recoils from hits.', 'Listen for the Ward Seven call bell. Answer it for a bonus worth seven strikes.', 'Preview the hospital encounter from its sector card at any level.'] },
     { version: '2.1.0', date: '2026-11-17', changes: ['The petrol station Attendant moves, watches and recoils from strikes.', 'The baseball bat has its own swing and Overdrive takes over the broadcast.', 'Footfalls announce the Rex before it breaks through the canopy.'] },
     { version: '2.0.0', date: '2026-11-17', changes: ['Illustrated combat sectors and a rebuilt armory.', 'Charge Overdrive with 20 strikes, then unleash triple damage for eight seconds.', 'Keyboard and touch combat, a streamlined field guide, and compatible saves.'] },
     {
@@ -507,6 +508,7 @@ const gameState = {
 
     // Location state
     currentLocation: 'suburbs',
+    wardStrikesLeft: 7,
     unlockedLocations: ['suburbs'],
     prestigeUpgrades: {},
     lifetimeKills: 0,
@@ -634,7 +636,7 @@ function updateTarget() {
         'Golden infected' : gameState.waveActive ? 'Horde infected' : 'Common infected';
     writeText('target-name', name);
     writeText('target-type', type);
-    elements.zombieTarget.setAttribute('aria-label', 'Strike ' + name);
+    elements.zombieTarget.setAttribute('aria-label', hospitalWard.phase === 'ring' ? 'Answer the Ward Seven call bell' : 'Strike ' + name);
 }
 
 function writeText(id, value) {
@@ -693,7 +695,10 @@ function switchLocation(locationId) {
         return;
     }
 
-    if (locationId !== gameState.currentLocation) cancelRexEntrance();
+    if (locationId !== gameState.currentLocation) {
+        cancelRexEntrance();
+        hospitalWard.clear();
+    }
     gameState.currentLocation = locationId;
     applyLocationTheme();
     SoundManager.playPurchase();
@@ -829,7 +834,7 @@ function checkGoldenZombieSpawn() {
     const baseChance = 0.005;
     const goldenChance = baseChance + (gameState.prestigeBonuses.goldenChance || 0);
 
-    if (!rexEntrancePending && !gameState.bossActive && !gameState.waveActive && !gameState.goldenZombieActive) {
+    if (!hospitalWard.phase && !rexEntrancePending && !gameState.bossActive && !gameState.waveActive && !gameState.goldenZombieActive) {
         if (Math.random() < goldenChance) {
             spawnGoldenZombie();
         }
@@ -1008,7 +1013,36 @@ function getBossForLevel() {
     };
 }
 
+const wardPreviewDialog = document.getElementById('ward-preview');
+const hospitalWard = createWardCall(elements.zombieTarget, phase => {
+    const messages = {
+        ring: 'The Ward Seven bell is ringing. Strike to answer.',
+        answer: 'A second bell answers from behind the curtain.',
+        reveal: 'The curtain opens on a silent row of faceless orderlies.',
+        clear: ''
+    };
+    writeText('ward-live-status', messages[phase]);
+    updateTarget();
+    updateStrikeVerb();
+});
+
+function strikeInWard() {
+    if (hospitalWard.answer()) {
+        const reward = 7 * getEffectiveClickPower();
+        gameState.kills += reward;
+        gameState.totalKills += reward;
+        showNotification('Ward call answered · +' + formatNumber(reward) + ' kills');
+        return;
+    }
+    if (hospitalWard.phase) return;
+    if (--gameState.wardStrikesLeft === 0) {
+        gameState.wardStrikesLeft = 42;
+        hospitalWard.ring();
+    }
+}
+
 let rexEntrancePending = false;
+let introWaveQueued = false;
 let rexTimers = [];
 let introducedRex = false;
 
@@ -1037,7 +1071,7 @@ function playRexEntrance(onArrival) {
 }
 
 function spawnBoss() {
-    if (rexEntrancePending || gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive) return;
+    if (hospitalWard.phase || rexEntrancePending || gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive) return;
     const boss = getBossForLevel();
     if (boss.tier === 1 && gameState.currentLocation === 'suburbs' && !document.hidden) {
         // The station remains playable during the warning. The boss clock begins on arrival.
@@ -1058,7 +1092,7 @@ function beginBoss(boss) {
     elements.zombieTarget.classList.add('boss-active');
     updateTarget();
 
-    SoundManager.playBossAppear();
+    if (!wardPreviewDialog.open) SoundManager.playBossAppear();
     updateEventDisplay();
     showNotification(`⚠️ BOSS: ${boss.name} appeared!`);
 }
@@ -1129,7 +1163,7 @@ function showBossVictory(boss, reward) {
 
 // ===== ZOMBIE WAVE SYSTEM =====
 function startWave(intro = false) {
-    if (rexEntrancePending || gameState.waveActive || gameState.bossActive || gameState.goldenZombieActive) return;
+    if (hospitalWard.phase || rexEntrancePending || gameState.waveActive || gameState.bossActive || gameState.goldenZombieActive) return;
 
     gameState.waveNumber++;
     gameState.waveActive = true;
@@ -1244,6 +1278,7 @@ function eventTick() {
         if (!overdriveActive()) gameState.overdriveUntil = 0;
         updateDisplay();
     }
+    if (wardPreviewDialog.open) return;
     if (gameState.bossActive) {
         gameState.bossTimer--;
         if (gameState.bossTimer <= 0) {
@@ -1446,6 +1481,9 @@ function doPrestige() {
     }
 
     cancelRexEntrance();
+    hospitalWard.clear();
+    gameState.wardStrikesLeft = 7;
+    introWaveQueued = false;
     introducedRex = false;
     // Award prestige points
     gameState.prestigePoints += pointsToGain;
@@ -1543,8 +1581,13 @@ function showMilestone(milestone) {
 }
 
 // ===== UI UPDATES =====
+function updateStrikeVerb() {
+    const strike = gameState.upgrades.baseball_bat > 0 ? 'Swing bat' : 'Strike infected';
+    writeText('strike-verb', hospitalWard.phase === 'ring' ? 'Answer call' : strike);
+}
+
 function updateDisplay() {
-    writeText('strike-verb', gameState.upgrades.baseball_bat > 0 ? 'Swing bat' : 'Strike infected');
+    updateStrikeVerb();
     elements.killCount.textContent = formatNumber(gameState.kills);
     elements.perClick.textContent = formatNumber(getEffectiveClickPower());
     elements.perSecond.textContent = formatNumber(getEffectiveAutoPower());
@@ -1595,6 +1638,7 @@ function onZombieClick(event) {
     if (!overdriveActive()) gameState.overdriveCharge = Math.min(DRIVE_HITS, gameState.overdriveCharge + 1);
     const wasGolden = gameState.goldenZombieActive;
     const wasBoss = gameState.bossActive;
+    const ordinaryWardHit = gameState.currentLocation === 'hospital' && !wasGolden && !wasBoss && !gameState.waveActive && !rexEntrancePending;
     const critical = !wasGolden && rollCritical();
     const weapon = gameState.upgrades.baseball_bat > 0 ? 'bat' : 'fists';
     const drive = overdriveActive();
@@ -1631,8 +1675,13 @@ function onZombieClick(event) {
     elements.zombieTarget.classList.toggle('critical-hit', critical);
     clearTimeout(releaseHit);
     releaseHit = setTimeout(() => elements.zombieTarget.classList.remove('clicked', 'critical-hit'), 140);
-    if (gameState.totalClicks === 18 && !gameState.waveNumber) startWave(true);
-    else if (gameState.totalClicks >= 65 && !introducedRex && !gameState.bossesDefeated) spawnBoss();
+    if (ordinaryWardHit) strikeInWard();
+    // Let an active call finish if it coincides with the eighteenth-strike tutorial.
+    if (gameState.totalClicks === 18 && !gameState.waveNumber) introWaveQueued = true;
+    if (introWaveQueued && !hospitalWard.phase) {
+        introWaveQueued = false;
+        if (!gameState.waveNumber) startWave(true);
+    } else if (gameState.totalClicks >= 65 && !introducedRex && !gameState.bossesDefeated) spawnBoss();
     else if (!wasGolden && !wasBoss) checkGoldenZombieSpawn();
 
     checkMilestones();
@@ -1717,7 +1766,7 @@ function purchaseUpgrade(upgrade) {
 function autoKillTick() {
     if (gameState.killsPerSecond > 0 && !gameState.bossActive) {
         let autoKills = getEffectiveAutoPower();
-        if (gameState.waveActive) {
+        if (gameState.waveActive && !wardPreviewDialog.open) {
             autoKills = Math.floor(autoKills * gameState.waveMultiplier);
             addWaveKill(autoKills);
         }
@@ -1762,6 +1811,7 @@ function saveGame() {
         lifetimeKills: gameState.lifetimeKills,
         // Location data
         currentLocation: gameState.currentLocation,
+        wardStrikesLeft: gameState.wardStrikesLeft,
         unlockedLocations: gameState.unlockedLocations,
         // Combo & golden zombie data
         maxCombo: gameState.maxCombo,
@@ -1816,6 +1866,7 @@ function loadGame() {
 
             // Load location data
             gameState.currentLocation = data.currentLocation || 'suburbs';
+            gameState.wardStrikesLeft = Number.isInteger(data.wardStrikesLeft) && data.wardStrikesLeft >= 1 && data.wardStrikesLeft <= 42 ? data.wardStrikesLeft : 7;
             gameState.unlockedLocations = data.unlockedLocations || ['suburbs'];
 
             // Load combo & golden zombie data
@@ -1856,6 +1907,8 @@ const freshGame = JSON.stringify(gameState);
 function resetGame() {
     if (!confirm('Reset the game? This erases your kills, upgrades and achievements.')) return;
     cancelRexEntrance();
+    hospitalWard.clear();
+    introWaveQueued = false;
     introducedRex = false;
     cueRex('restored');
     clearTimeout(goldenExpiry);
@@ -1929,6 +1982,7 @@ let drawerOpener = null;
 
 function toggleSidePanel() {
     sidePanelOpen = !sidePanelOpen;
+    if (sidePanelOpen) hospitalWard.clear();
     const panel = elements.sidePanel;
     if (!panel) return;
     if (sidePanelOpen) drawerOpener = document.activeElement;
@@ -2234,7 +2288,15 @@ function init() {
     setInterval(eventTick, 1000);
     setInterval(() => { if (sidePanelOpen && currentTab === 'stats') renderStatsTab(); }, 1000);
     setInterval(decayCombo, 100);
-    document.addEventListener('visibilitychange', () => { if (document.hidden) saveGame(); });
+    document.addEventListener('beforetoggle', event => {
+        if (event.target instanceof HTMLDialogElement && event.newState === 'open') hospitalWard.clear();
+    }, true);
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            hospitalWard.clear();
+            saveGame();
+        }
+    });
     window.addEventListener('pagehide', saveGame);
 }
 

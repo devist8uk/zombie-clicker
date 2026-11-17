@@ -1,0 +1,196 @@
+/* The call switch, linen and projection share the clipping of the field.
+   None intercepts a player's strike or a preview button's native activation. */
+.ward-stage,.ward-projection,.ward-drape,.ward-cloth,.ward-vignette {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.ward-stage {
+  z-index: 2;
+  display: block;
+  overflow: hidden;
+  isolation: isolate;
+  text-align: left;
+  color: #fff0cc;
+}
+.ward-projection {
+  overflow: hidden;
+  container-type: size;
+  visibility: hidden;
+  background: #101d22;
+}
+.ward-plate {
+  position: absolute;
+  left: 69%;
+  top: 35%;
+  width: 100%;
+  height: 100%;
+  width: max(100cqw, 177.778cqh);
+  height: max(56.25cqw, 100cqh);
+  transform: translate(-69%, -35%);
+  transform-origin: 71% 29%;
+}
+.ward-orderlies {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 69% 35%;
+  user-select: none;
+}
+.ward-vignette {
+  background: linear-gradient(0deg,#06111699,transparent 27%),radial-gradient(ellipse at 66% 40%,transparent 40%,#0b1b2380);
+}
+.ward-lamp {
+  position: absolute;
+  width: var(--halo);
+  aspect-ratio: 1.3;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  background: radial-gradient(ellipse,#fffbc3 0 4%,#ffe28caa 9%,#ff943e72 27%,#f7672130 44%,transparent 72%);
+  mix-blend-mode: screen;
+}
+.ward-lamp.far {left:40.7%;top:54%;--halo:6%;--delay:150ms}
+.ward-lamp.distant {left:30.5%;top:58%;--halo:4%;--delay:430ms}
+.ward-lamp.middle {left:22.5%;top:54%;--halo:6.5%;--delay:690ms}
+.ward-lamp.aisle {left:16.3%;top:50%;--halo:8%;--delay:940ms}
+.ward-lamp.near {left:5.5%;top:56%;--halo:9%;--delay:1170ms}
+.ward-face-reflection {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  clip-path: polygon(65% 13%,69% 9%,71% 9.4%,75% 17%,77.4% 26%,77.4% 32%,75% 35%,71% 33%,66% 25%,64.7% 18%);
+  background: linear-gradient(122deg,transparent 42%,#fff6b02e 46%,#fff6b068 48%,transparent 55%) 20% center / 250% 100%;
+  mix-blend-mode: screen;
+}
+[data-ward-phase="reveal"] .ward-projection {visibility:visible}
+[data-ward-phase="reveal"] .ward-plate {animation:ward-lean 3s cubic-bezier(.18,.6,.29,1) both}
+[data-ward-phase="reveal"] .ward-lamp {animation:ward-lamp-light 650ms var(--delay) both}
+[data-ward-phase="reveal"] .ward-face-reflection {animation:ward-reflection 1.3s 1.1s ease-out both}
+@keyframes ward-lean {
+  from {transform:translate(-69%,-35%) scale(1); filter:brightness(.62) saturate(.58)}
+  46% {filter:brightness(.92) saturate(.9)}
+  to {transform:translate(-69%,-35%) scale(1.065); filter:brightness(1) saturate(1)}
+}
+@keyframes ward-lamp-light {from{opacity:0}42%{opacity:1}to{opacity:.55}}
+@keyframes ward-reflection {
+  0% {opacity:0;background-position:10% center}
+  30% {opacity:.77}
+  100% {opacity:0;background-position:95% center}
+}
+
+/* The orange drawn curtain echoes the abandoned privacy screen in sector 02. */
+.ward-drape {
+  visibility: hidden;
+  transform-origin: 0 0;
+  filter: drop-shadow(9px 2px 4px #050e11a6);
+}
+.ward-hooks {
+  position:absolute;inset:0 0 auto;height:4%;
+  background:
+    radial-gradient(ellipse at 50% 40%,transparent 24%,#c7b98b 27% 32%,#15282c 37% 41%,transparent 45%) 0 -1px / 7.9% 140% repeat-x,
+    linear-gradient(#142d33 0 15%,#9eac92 16% 30%,#151c1b 33% 44%,transparent 45%);
+}
+.ward-cloth {
+  top:2.8%;
+  width:102%;
+  background-color:#ac6551;
+  background-image:
+    linear-gradient(0deg,#081a23a8,transparent 30%,transparent 91%,#2c282d40),
+    linear-gradient(0deg,transparent 0 14.5%,#a6ad8a99 14.6% 15%,#593f3c 15.2% 15.7%,transparent 16% 17%,#604138 17.1% 17.8%,transparent 18%),
+    repeating-linear-gradient(77deg,#2a34333b 0 1px,transparent 1px 3px),
+    repeating-linear-gradient(92deg,#2b3031 0%,#6c4c43 1%,#a35e4c 2.2%,#bc7d5b 3.8%,#bd7957 4.8%,#844f45 6.1%,#493c38 7.1%,#23303a 7.8%,#2b3031 8%);
+  clip-path:polygon(0 0,98.5% 0,99% 12%,98.3% 29%,99.5% 47%,99.2% 66%,100% 86%,99.3% 97%,92% 98.5%,86% 97.5%,79% 99%,73% 98%,68% 100%,62% 98.5%,55% 99.5%,49% 98%,44% 99%,38% 97.5%,32% 99.5%,23% 98%,15% 99%,9% 98%,0 100%);
+  border-top: 3px solid #292d29;
+}
+.ward-room-number {
+  position:absolute;right:9%;top:13%;transform:rotate(3deg) skew(-3deg);
+  border:2px solid #32373088;padding:.02em .15em;
+  font:700 clamp(23px,6vw,87px)/1 var(--display);
+  letter-spacing:.025em;color:#303b3888;
+  mix-blend-mode:multiply;
+}
+[data-ward-phase="answer"] .ward-drape, [data-ward-phase="reveal"] .ward-drape {visibility:visible}
+[data-ward-phase="answer"] .ward-drape {animation:ward-draw .78s cubic-bezier(.22,.67,.21,1) both}
+[data-ward-phase="reveal"] .ward-drape {animation:ward-open .78s cubic-bezier(.63,.05,.27,1) both}
+@keyframes ward-draw {
+  0%{transform:translateX(-104%) skewX(-6deg)}
+  82%{transform:translateX(1%) skewX(-1.5deg)}
+  100%{transform:translateX(0) skewX(0)}
+}
+@keyframes ward-open {
+  0%,9%{transform:translateX(0)}
+  27%{transform:translateX(-9%) skewX(2.4deg)}
+  100%{transform:translateX(-106%) skewX(4deg)}
+}
+
+/* The cord is suspended from the rig, and swings around its ceiling fixing. */
+.ward-pull {
+  display:none;
+  position:absolute;
+  width:clamp(20px,3.7%,34px);
+  height:44%;
+  left:43%;
+  top:0;
+  transform-origin:50% 0;
+}
+.ward-pull-wire {
+  position:absolute;top:0;bottom:8px;width:3px;left:calc(50% - 1.5px);
+  background:repeating-linear-gradient(154deg,#c4b097 0 2px,#473e38 2px 4px);
+  box-shadow:1px 0 1px #151b18;
+}
+.ward-pull-case {
+  position:absolute;left:0;right:0;bottom:0;aspect-ratio:.59;
+  border:2px solid #3e3430;border-radius:42% 40% 43% 40%;
+  background:linear-gradient(100deg,#633a32,#ab6953 20%,#c59168 48%,#995c45 72%,#523c35);
+  box-shadow:inset -2px -3px #633a2d,1px 3px 4px #07151aaa;
+}
+.ward-pull-case:before,.ward-pull-case:after {
+  content:"";position:absolute;width:3px;height:2px;left:calc(50% - 1.5px);
+  background:#332f2a;border-radius:50%;
+}
+.ward-pull-case:before{top:8%}.ward-pull-case:after{bottom:11%}
+.ward-pull-lens {
+  position:absolute;inset:20% 14% 35%;background:#ffb665;
+  border-radius:50%;border:2px solid #784f39;
+  box-shadow:inset 1px 1px 2px #fff8ca,0 0 8px #ff8c4044;
+}
+[data-ward-phase="ring"] .ward-pull {
+  display:block;
+  animation:ward-pull-swing 2.2s ease-in-out infinite;
+}
+[data-ward-phase="ring"] .ward-pull-lens {animation:ward-call-light 2.2s ease-in-out infinite}
+@keyframes ward-pull-swing {0%{rotate:-2deg}8%{rotate:6deg}19%{rotate:-5deg}32%{rotate:3deg}48%,100%{rotate:-2deg}}
+@keyframes ward-call-light {0%,73%,100%{background:#ef8d4f;box-shadow:inset 1px 1px 2px #fff8ca,0 0 7px #ff8c4077}28%,50%{background:#ffef9c;box-shadow:0 0 16px #ffad56}}
+.ward-caption {
+  position:absolute;bottom:clamp(18px,2vw,34px);left:clamp(18px,2.1vw,40px);
+  display:flex;align-items:center;gap:9px;max-width:calc(100% - 34px);
+  padding:9px 13px;border-left:3px solid #ffae65;
+  background:#15272aef;color:#ffedc5;
+  font:700 clamp(16px,1.55vw,24px)/1 var(--display);letter-spacing:.015em;
+  box-shadow:3px 3px #07171978;
+}
+.ward-caption i {
+  width:.68em;height:.80em;border-radius:55% 55% 30% 30%;
+  border:1px solid #d38352;background:#ffcb79;
+  box-shadow:0 0 6px #ffb65e77;
+}
+[data-ward-phase="answer"] .ward-caption {font-style:italic}
+[data-ward-phase="reveal"] .ward-caption {
+  font-size:clamp(24px,3.2vw,52px);font-style:italic;text-transform:uppercase;
+  animation:ward-caption-in .55s .32s both;
+}
+@keyframes ward-caption-in {from{opacity:0;transform:translateX(-5px)}to{opacity:1;transform:none}}
+[data-ward-phase] :is(.action-tag,.scope,.specimen) {visibility:hidden}
+[data-ward-phase="ring"] .scene-text{opacity:.77}
+[data-ward-phase="answer"] .scene-text,[data-ward-phase="reveal"] .scene-text{visibility:hidden}
+@media(max-width:480px){
+  .ward-caption{left:14px;bottom:16px;padding:8px 11px}
+  .ward-pull{left:44%}
+}
+@media(prefers-reduced-motion:reduce){
+  .ward-stage * {animation:none!important;transition:none!important}
+  [data-ward-phase="reveal"] .ward-drape {visibility:hidden}
+  [data-ward-phase="reveal"] .ward-lamp {opacity:.45}
+}

@@ -63,7 +63,7 @@
   field.parentElement.append(radio);
 
   function footstep(near) {
-    if (!SoundManager.enabled || document.hidden) return;
+    if (!SoundManager.enabled || document.hidden || wardPreviewDialog.open) return;
     SoundManager.playTone(near ? 46 : 39, near ? 0.42 : 0.32, "sine", near ? 0.63 : 0.43);
     SoundManager.playTone(near ? 111 : 76, 0.14, "triangle", 0.19);
   }
@@ -110,7 +110,7 @@
       }
       call.textContent = "Canopy breach";
       radio.textContent = "Zombie Rex is breaking through the canopy.";
-      if (!document.hidden) {
+      if (!document.hidden && !wardPreviewDialog.open) {
         SoundManager.playTone(68, 0.52, "sawtooth", 0.24);
         SoundManager.playTone(43, 0.8, "triangle", 0.5);
       }

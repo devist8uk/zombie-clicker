@@ -1,0 +1,10 @@
+.patient-zero-rig {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: inherit;
+  pointer-events: none;
+}
+.patient-zero-rig[hidden] { display: none; }

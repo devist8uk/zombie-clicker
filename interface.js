@@ -86,6 +86,7 @@
     detail.style.setProperty("--thumb", 'url("' + scenePath(index) + '")');
     const sighting = byId("watch-rex");
     sighting.hidden = index !== 0 || !current;
+    byId("watch-ward").hidden = selectedSector.id !== "hospital";
     sighting.disabled = gameState.bossActive || gameState.waveActive || gameState.goldenZombieActive || rexEntrancePending;
     const travel = byId("travel-btn");
     travel.textContent = current
